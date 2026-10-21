@@ -1,0 +1,1389 @@
+{
+  "name": "Final Mission (Action in New York / S.C.A.T.) Assets Manifest",
+  "platform": "Android / LibGDX",
+  "version": "1.0.0",
+  "summary": {
+    "total_sprites": 186,
+    "total_audio": 12,
+    "total_data": 3
+  },
+  "sprites": {
+    "player": {
+      "player_1_arnold": {
+        "description": "Player 1 (Arnold) - Male soldier in blue cybernetic flight suit",
+        "flight_right": [
+          {
+            "file": "sprites/jugador1D1.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming right frame 1"
+          },
+          {
+            "file": "sprites/jugador1D2.png",
+            "width": 108,
+            "height": 116,
+            "role": "Flight / aiming right frame 2"
+          },
+          {
+            "file": "sprites/jugador1D3.png",
+            "width": 108,
+            "height": 116,
+            "role": "Flight / aiming right frame 3"
+          },
+          {
+            "file": "sprites/jugador1D4.png",
+            "width": 88,
+            "height": 116,
+            "role": "Flight / aiming right frame 4"
+          },
+          {
+            "file": "sprites/jugador1D5.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming right frame 5"
+          },
+          {
+            "file": "sprites/jugador1D6.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming right frame 6"
+          }
+        ],
+        "flight_left": [
+          {
+            "file": "sprites/jugador1I1.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming left frame 1"
+          },
+          {
+            "file": "sprites/jugador1I2.png",
+            "width": 108,
+            "height": 116,
+            "role": "Flight / aiming left frame 2"
+          },
+          {
+            "file": "sprites/jugador1I3.png",
+            "width": 108,
+            "height": 116,
+            "role": "Flight / aiming left frame 3"
+          }
+        ]
+      },
+      "player_2_sigourney": {
+        "description": "Player 2 (Sigourney) - Female soldier in reddish-orange cybernetic flight suit",
+        "flight_right": [
+          {
+            "file": "sprites/jugador2D1.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming right frame 1"
+          },
+          {
+            "file": "sprites/jugador2D2.png",
+            "width": 88,
+            "height": 116,
+            "role": "Flight / aiming right frame 2"
+          },
+          {
+            "file": "sprites/jugador2D3.png",
+            "width": 88,
+            "height": 116,
+            "role": "Flight / aiming right frame 3"
+          },
+          {
+            "file": "sprites/jugador2D4.png",
+            "width": 84,
+            "height": 116,
+            "role": "Flight / aiming right frame 4"
+          }
+        ],
+        "flight_left": [
+          {
+            "file": "sprites/jugador2I1.png",
+            "width": 92,
+            "height": 116,
+            "role": "Flight / aiming left frame 1"
+          }
+        ]
+      }
+    },
+    "satellites": {
+      "description": "Orbital attack satellites providing 360-degree directional defense and fire",
+      "diagonal_down": [
+        {
+          "file": "sprites/sateliteDD1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming diagonal down frame 1"
+        },
+        {
+          "file": "sprites/sateliteDD2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming diagonal down frame 2"
+        }
+      ],
+      "diagonal_up_left": [
+        {
+          "file": "sprites/sateliteDI1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming diagonal up-left frame 1"
+        },
+        {
+          "file": "sprites/sateliteDI2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming diagonal up-left frame 2"
+        }
+      ],
+      "horizontal_right": [
+        {
+          "file": "sprites/sateliteHD1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming horizontal right frame 1"
+        },
+        {
+          "file": "sprites/sateliteHD2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming horizontal right frame 2"
+        }
+      ],
+      "horizontal_left": [
+        {
+          "file": "sprites/sateliteHI1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming horizontal left frame 1"
+        },
+        {
+          "file": "sprites/sateliteHI2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming horizontal left frame 2"
+        }
+      ],
+      "vertical_up": [
+        {
+          "file": "sprites/sateliteVA1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming vertical up frame 1"
+        },
+        {
+          "file": "sprites/sateliteVA2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming vertical up frame 2"
+        }
+      ],
+      "vertical_down": [
+        {
+          "file": "sprites/sateliteVB1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming vertical down frame 1"
+        },
+        {
+          "file": "sprites/sateliteVB2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Aiming vertical down frame 2"
+        }
+      ],
+      "satellite_bullet": {
+        "file": "sprites/balaSatelite.png",
+        "width": 16,
+        "height": 16,
+        "role": "Energy projectile fired by satellite"
+      }
+    },
+    "enemies": {
+      "antiAereo": {
+        "description": "Anti-aircraft cannon turret enemy",
+        "directional": [
+          {
+            "file": "sprites/antiAreoD1.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret aiming right frame 1"
+          },
+          {
+            "file": "sprites/antiAreoD2.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret aiming right frame 2"
+          },
+          {
+            "file": "sprites/antiAreoH1.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret horizontal frame 1"
+          },
+          {
+            "file": "sprites/antiAreoH2.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret horizontal frame 2"
+          },
+          {
+            "file": "sprites/antiAreoV1.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret vertical frame 1"
+          },
+          {
+            "file": "sprites/antiAreoV2.png",
+            "width": 60,
+            "height": 64,
+            "role": "Turret vertical frame 2"
+          }
+        ],
+        "special_turret": [
+          {
+            "file": "sprites/antiAreoEspecialD.png",
+            "width": 48,
+            "height": 64,
+            "role": "Special turret diagonal right"
+          },
+          {
+            "file": "sprites/antiAreoEspecialH.png",
+            "width": 56,
+            "height": 52,
+            "role": "Special turret horizontal"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV1.png",
+            "width": 48,
+            "height": 60,
+            "role": "Special turret rotation angle 1"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV2.png",
+            "width": 48,
+            "height": 56,
+            "role": "Special turret rotation angle 2"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV3.png",
+            "width": 48,
+            "height": 52,
+            "role": "Special turret rotation angle 3"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV4.png",
+            "width": 40,
+            "height": 48,
+            "role": "Special turret rotation angle 4"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV5.png",
+            "width": 32,
+            "height": 44,
+            "role": "Special turret rotation angle 5"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV6.png",
+            "width": 32,
+            "height": 40,
+            "role": "Special turret rotation angle 6"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV7.png",
+            "width": 32,
+            "height": 36,
+            "role": "Special turret rotation angle 7"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV8.png",
+            "width": 32,
+            "height": 32,
+            "role": "Special turret rotation angle 8"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV9.png",
+            "width": 32,
+            "height": 28,
+            "role": "Special turret rotation angle 9"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV10.png",
+            "width": 32,
+            "height": 20,
+            "role": "Special turret rotation angle 10"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV11.png",
+            "width": 24,
+            "height": 16,
+            "role": "Special turret rotation angle 11"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV12.png",
+            "width": 16,
+            "height": 12,
+            "role": "Special turret rotation angle 12"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV13.png",
+            "width": 16,
+            "height": 8,
+            "role": "Special turret rotation angle 13"
+          },
+          {
+            "file": "sprites/antiAreoEspecialV14.png",
+            "width": 8,
+            "height": 4,
+            "role": "Special turret rotation angle 14"
+          }
+        ]
+      },
+      "volador": {
+        "description": "Flying attack drone that swoops in undulating wave patterns",
+        "facing_right": [
+          {
+            "file": "sprites/voladorD1.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving right frame 1"
+          },
+          {
+            "file": "sprites/voladorD2.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving right frame 2"
+          },
+          {
+            "file": "sprites/voladorD3.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving right frame 3"
+          }
+        ],
+        "facing_left": [
+          {
+            "file": "sprites/voladorI1.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving left frame 1"
+          },
+          {
+            "file": "sprites/voladorI2.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving left frame 2"
+          },
+          {
+            "file": "sprites/voladorI3.png",
+            "width": 64,
+            "height": 64,
+            "role": "Moving left frame 3"
+          }
+        ]
+      },
+      "saltador": {
+        "description": "Jumping walker robot that leaps across platforms",
+        "jump_animation": [
+          {
+            "file": "sprites/saltador1.png",
+            "width": 96,
+            "height": 116,
+            "role": "Jumping/crouching frame 1"
+          },
+          {
+            "file": "sprites/saltador2.png",
+            "width": 96,
+            "height": 116,
+            "role": "Jumping/crouching frame 2"
+          },
+          {
+            "file": "sprites/saltador3.png",
+            "width": 96,
+            "height": 92,
+            "role": "Jumping/crouching frame 3"
+          },
+          {
+            "file": "sprites/saltador4.png",
+            "width": 96,
+            "height": 116,
+            "role": "Jumping/crouching frame 4"
+          }
+        ],
+        "projectiles": [
+          {
+            "file": "sprites/balaSaltador1.png",
+            "width": 64,
+            "height": 64,
+            "role": "Jumper bullet frame 1"
+          },
+          {
+            "file": "sprites/balaSaltador2.png",
+            "width": 64,
+            "height": 64,
+            "role": "Jumper bullet frame 2"
+          }
+        ]
+      },
+      "robot": {
+        "description": "Heavy mech bipedal walker patrolling horizontal surfaces",
+        "facing_right": {
+          "file": "sprites/robotD.png",
+          "width": 96,
+          "height": 128,
+          "role": "Heavy mech facing right"
+        },
+        "facing_left": {
+          "file": "sprites/robotI.png",
+          "width": 96,
+          "height": 128,
+          "role": "Heavy mech facing left"
+        }
+      },
+      "lanzaMisil": {
+        "description": "Missile launcher tank with smoke trail and explosive rockets",
+        "aiming_right": [
+          {
+            "file": "sprites/lanzaMisilD1.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing right frame 1"
+          },
+          {
+            "file": "sprites/lanzaMisilD2.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing right frame 2"
+          },
+          {
+            "file": "sprites/lanzaMisilD3.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing right frame 3"
+          }
+        ],
+        "aiming_left": [
+          {
+            "file": "sprites/lanzaMisilI1.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing left frame 1"
+          },
+          {
+            "file": "sprites/lanzaMisilI2.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing left frame 2"
+          },
+          {
+            "file": "sprites/lanzaMisilI3.png",
+            "width": 96,
+            "height": 64,
+            "role": "Launcher facing left frame 3"
+          }
+        ],
+        "missiles": {
+          "diagonal": [
+            {
+              "file": "sprites/misilD1.png",
+              "width": 28,
+              "height": 28,
+              "role": "Diagonal missile frame 1"
+            },
+            {
+              "file": "sprites/misilD2.png",
+              "width": 28,
+              "height": 28,
+              "role": "Diagonal missile frame 2"
+            }
+          ],
+          "horizontal": [
+            {
+              "file": "sprites/misilH1.png",
+              "width": 32,
+              "height": 24,
+              "role": "Horizontal missile frame 1"
+            },
+            {
+              "file": "sprites/misilH2.png",
+              "width": 32,
+              "height": 24,
+              "role": "Horizontal missile frame 2"
+            }
+          ],
+          "vertical": [
+            {
+              "file": "sprites/misilV1.png",
+              "width": 24,
+              "height": 32,
+              "role": "Vertical missile frame 1"
+            },
+            {
+              "file": "sprites/misilV2.png",
+              "width": 24,
+              "height": 32,
+              "role": "Vertical missile frame 2"
+            }
+          ]
+        },
+        "smoke_trail": [
+          {
+            "file": "sprites/humoMisil1.png",
+            "width": 32,
+            "height": 32,
+            "role": "Missile exhaust smoke puff 1"
+          },
+          {
+            "file": "sprites/humoMisil2.png",
+            "width": 32,
+            "height": 32,
+            "role": "Missile exhaust smoke puff 2"
+          },
+          {
+            "file": "sprites/humoMisil3.png",
+            "width": 32,
+            "height": 32,
+            "role": "Missile exhaust smoke puff 3"
+          }
+        ]
+      },
+      "maquinaPared": {
+        "description": "Wall-crawling turret mounting the vertical shaft walls",
+        "facing_right": [
+          {
+            "file": "sprites/maquinaParedD1.png",
+            "width": 52,
+            "height": 64,
+            "role": "Wall turret right frame 1"
+          },
+          {
+            "file": "sprites/maquinaParedD2.png",
+            "width": 52,
+            "height": 64,
+            "role": "Wall turret right frame 2"
+          }
+        ],
+        "facing_left": [
+          {
+            "file": "sprites/maquinaParedI1.png",
+            "width": 52,
+            "height": 64,
+            "role": "Wall turret left frame 1"
+          },
+          {
+            "file": "sprites/maquinaParedI2.png",
+            "width": 52,
+            "height": 64,
+            "role": "Wall turret left frame 2"
+          }
+        ],
+        "bullets": [
+          {
+            "file": "sprites/balaParedD.png",
+            "width": 64,
+            "height": 24,
+            "role": "Wall turret projectile right"
+          },
+          {
+            "file": "sprites/balaParedI.png",
+            "width": 64,
+            "height": 24,
+            "role": "Wall turret projectile left"
+          }
+        ]
+      },
+      "boss_maquinaFinal": {
+        "description": "Stage 1 Final Boss - Alien Fortress Core and defense weaponry",
+        "core": {
+          "file": "sprites/maquinaFinal.png",
+          "width": 64,
+          "height": 64,
+          "role": "Boss primary vulnerable core"
+        },
+        "machinery_sheet": {
+          "file": "sprites/maquinas.png",
+          "width": 512,
+          "height": 512,
+          "role": "Boss composite armored structures and mechanical limbs"
+        },
+        "plasma_spheres": [
+          {
+            "file": "sprites/bola1.png",
+            "width": 64,
+            "height": 64,
+            "role": "Rotating pulsating plasma orb frame 1"
+          },
+          {
+            "file": "sprites/bola2.png",
+            "width": 64,
+            "height": 60,
+            "role": "Rotating pulsating plasma orb frame 2"
+          },
+          {
+            "file": "sprites/bola3.png",
+            "width": 64,
+            "height": 56,
+            "role": "Rotating pulsating plasma orb frame 3"
+          },
+          {
+            "file": "sprites/bola4.png",
+            "width": 64,
+            "height": 52,
+            "role": "Rotating pulsating plasma orb frame 4"
+          },
+          {
+            "file": "sprites/bola5.png",
+            "width": 64,
+            "height": 48,
+            "role": "Rotating pulsating plasma orb frame 5"
+          },
+          {
+            "file": "sprites/bola6.png",
+            "width": 64,
+            "height": 44,
+            "role": "Rotating pulsating plasma orb frame 6"
+          },
+          {
+            "file": "sprites/bola7.png",
+            "width": 64,
+            "height": 40,
+            "role": "Rotating pulsating plasma orb frame 7"
+          },
+          {
+            "file": "sprites/bola8.png",
+            "width": 64,
+            "height": 36,
+            "role": "Rotating pulsating plasma orb frame 8"
+          },
+          {
+            "file": "sprites/bola9.png",
+            "width": 64,
+            "height": 32,
+            "role": "Rotating pulsating plasma orb frame 9"
+          },
+          {
+            "file": "sprites/bola10.png",
+            "width": 64,
+            "height": 28,
+            "role": "Rotating pulsating plasma orb frame 10"
+          },
+          {
+            "file": "sprites/bola11.png",
+            "width": 56,
+            "height": 24,
+            "role": "Rotating pulsating plasma orb frame 11"
+          },
+          {
+            "file": "sprites/bola12.png",
+            "width": 56,
+            "height": 20,
+            "role": "Rotating pulsating plasma orb frame 12"
+          },
+          {
+            "file": "sprites/bola13.png",
+            "width": 48,
+            "height": 16,
+            "role": "Rotating pulsating plasma orb frame 13"
+          },
+          {
+            "file": "sprites/bola14.png",
+            "width": 40,
+            "height": 12,
+            "role": "Rotating pulsating plasma orb frame 14"
+          },
+          {
+            "file": "sprites/bola15.png",
+            "width": 32,
+            "height": 8,
+            "role": "Rotating pulsating plasma orb frame 15"
+          },
+          {
+            "file": "sprites/bola16.png",
+            "width": 16,
+            "height": 4,
+            "role": "Rotating pulsating plasma orb frame 16"
+          }
+        ]
+      }
+    },
+    "bullets": {
+      "player_basic": {
+        "description": "Standard vulcan rapid fire shots",
+        "diagonal_down_right": {
+          "file": "sprites/balaBD.png",
+          "width": 32,
+          "height": 24,
+          "role": "Diagonal down right shot"
+        },
+        "diagonal_down_left": {
+          "file": "sprites/balaBI.png",
+          "width": 32,
+          "height": 24,
+          "role": "Diagonal down left shot"
+        },
+        "horizontal_right": {
+          "file": "sprites/balaHD.png",
+          "width": 20,
+          "height": 8,
+          "role": "Horizontal right shot"
+        },
+        "horizontal_left": {
+          "file": "sprites/balaHI.png",
+          "width": 20,
+          "height": 8,
+          "role": "Horizontal left shot"
+        }
+      },
+      "player_laser": {
+        "description": "High-power concentrated laser beam projectiles",
+        "right": [
+          {
+            "file": "sprites/balaLD1.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser right segment 1"
+          },
+          {
+            "file": "sprites/balaLD2.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser right segment 2"
+          },
+          {
+            "file": "sprites/balaLD3.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser right segment 3"
+          }
+        ],
+        "left": [
+          {
+            "file": "sprites/balaLI1.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser left segment 1"
+          },
+          {
+            "file": "sprites/balaLI2.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser left segment 2"
+          },
+          {
+            "file": "sprites/balaLI3.png",
+            "width": 128,
+            "height": 8,
+            "role": "Laser left segment 3"
+          }
+        ]
+      },
+      "player_wave": {
+        "description": "Wide oscillating wave beam projectiles",
+        "right": [
+          {
+            "file": "sprites/balaWD1.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot right frame 1"
+          },
+          {
+            "file": "sprites/balaWD2.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot right frame 2"
+          },
+          {
+            "file": "sprites/balaWD3.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot right frame 3"
+          }
+        ],
+        "left": [
+          {
+            "file": "sprites/balaWI1.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot left frame 1"
+          },
+          {
+            "file": "sprites/balaWI2.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot left frame 2"
+          },
+          {
+            "file": "sprites/balaWI3.png",
+            "width": 32,
+            "height": 128,
+            "role": "Wave shot left frame 3"
+          }
+        ]
+      },
+      "enemy_bullets": [
+        {
+          "file": "sprites/balaE1.png",
+          "width": 24,
+          "height": 24,
+          "role": "Enemy energy bullet animation frame 1"
+        },
+        {
+          "file": "sprites/balaE2.png",
+          "width": 24,
+          "height": 24,
+          "role": "Enemy energy bullet animation frame 2"
+        },
+        {
+          "file": "sprites/balaE3.png",
+          "width": 24,
+          "height": 24,
+          "role": "Enemy energy bullet animation frame 3"
+        },
+        {
+          "file": "sprites/balaE4.png",
+          "width": 24,
+          "height": 24,
+          "role": "Enemy energy bullet animation frame 4"
+        }
+      ]
+    },
+    "powerups": {
+      "containers": [
+        {
+          "file": "sprites/cajaPoder1.png",
+          "width": 64,
+          "height": 64,
+          "role": "Power container capsule animation frame 1"
+        },
+        {
+          "file": "sprites/cajaPoder2.png",
+          "width": 64,
+          "height": 64,
+          "role": "Power container capsule animation frame 2"
+        },
+        {
+          "file": "sprites/cajaPoder3.png",
+          "width": 64,
+          "height": 64,
+          "role": "Power container capsule animation frame 3"
+        },
+        {
+          "file": "sprites/cajaPoder4.png",
+          "width": 64,
+          "height": 64,
+          "role": "Power container capsule animation frame 4"
+        }
+      ],
+      "capsules": {
+        "bomb_b": {
+          "file": "sprites/poderB.png",
+          "width": 64,
+          "height": 64,
+          "role": "B - Bomb / Screen wipe smart bomb powerup"
+        },
+        "laser_l": {
+          "file": "sprites/poderL.png",
+          "width": 64,
+          "height": 64,
+          "role": "L - Laser beam weapon upgrade"
+        },
+        "speed_s": {
+          "file": "sprites/poderS.png",
+          "width": 64,
+          "height": 64,
+          "role": "S - Speed booster / flight thruster upgrade"
+        },
+        "wave_w": {
+          "file": "sprites/poderW.png",
+          "width": 64,
+          "height": 64,
+          "role": "W - Wide wave gun weapon upgrade"
+        }
+      }
+    },
+    "effects": {
+      "explosion_standard": [
+        {
+          "file": "sprites/explosion1.png",
+          "width": 128,
+          "height": 128,
+          "role": "Standard enemy blast frame 1"
+        },
+        {
+          "file": "sprites/explosion2.png",
+          "width": 128,
+          "height": 128,
+          "role": "Standard enemy blast frame 2"
+        },
+        {
+          "file": "sprites/explosion3.png",
+          "width": 128,
+          "height": 128,
+          "role": "Standard enemy blast frame 3"
+        },
+        {
+          "file": "sprites/explosion4.png",
+          "width": 128,
+          "height": 128,
+          "role": "Standard enemy blast frame 4"
+        }
+      ],
+      "explosion_boss": [
+        {
+          "file": "sprites/explosionB1.png",
+          "width": 128,
+          "height": 128,
+          "role": "Large boss detonation frame 1"
+        },
+        {
+          "file": "sprites/explosionB2.png",
+          "width": 128,
+          "height": 128,
+          "role": "Large boss detonation frame 2"
+        },
+        {
+          "file": "sprites/explosionB3.png",
+          "width": 128,
+          "height": 128,
+          "role": "Large boss detonation frame 3"
+        },
+        {
+          "file": "sprites/explosionB4.png",
+          "width": 128,
+          "height": 128,
+          "role": "Large boss detonation frame 4"
+        },
+        {
+          "file": "sprites/explosionB5.png",
+          "width": 128,
+          "height": 128,
+          "role": "Large boss detonation frame 5"
+        }
+      ],
+      "explosion_missile": [
+        {
+          "file": "sprites/explosionMisil1.png",
+          "width": 64,
+          "height": 64,
+          "role": "Missile contact explosion frame 1"
+        },
+        {
+          "file": "sprites/explosionMisil2.png",
+          "width": 64,
+          "height": 64,
+          "role": "Missile contact explosion frame 2"
+        },
+        {
+          "file": "sprites/explosionMisil3.png",
+          "width": 64,
+          "height": 64,
+          "role": "Missile contact explosion frame 3"
+        },
+        {
+          "file": "sprites/explosionMisil4.png",
+          "width": 64,
+          "height": 64,
+          "role": "Missile contact explosion frame 4"
+        }
+      ]
+    },
+    "hud_and_ui": {
+      "health_lives": {
+        "player_1_life_icon": {
+          "file": "sprites/vida1.png",
+          "width": 24,
+          "height": 48,
+          "role": "Player 1 status icon / life meter"
+        },
+        "player_2_life_icon": {
+          "file": "sprites/vida2.png",
+          "width": 24,
+          "height": 48,
+          "role": "Player 2 status icon / life meter"
+        }
+      },
+      "progress_bar": {
+        "bar_container": {
+          "file": "sprites/barraProgreso.png",
+          "width": 256,
+          "height": 240,
+          "role": "HUD Level progression tracker background"
+        },
+        "indicator": {
+          "file": "sprites/barraProgreso1.png",
+          "width": 256,
+          "height": 29,
+          "role": "HUD Level progression current position pip"
+        }
+      },
+      "menu_selectors": [
+        {
+          "file": "sprites/selector1.png",
+          "width": 32,
+          "height": 32,
+          "role": "Menu cursor / crosshair state 1"
+        },
+        {
+          "file": "sprites/selector2.png",
+          "width": 32,
+          "height": 32,
+          "role": "Menu cursor / crosshair state 2"
+        }
+      ],
+      "screens": {
+        "menu_title_1": {
+          "file": "sprites/menu1.png",
+          "width": 256,
+          "height": 240,
+          "role": "Title screen mode selection 1"
+        },
+        "menu_title_2": {
+          "file": "sprites/menu2.png",
+          "width": 256,
+          "height": 240,
+          "role": "Title screen mode selection 2"
+        },
+        "menu_game_over": {
+          "file": "sprites/menuFinal.png",
+          "width": 256,
+          "height": 240,
+          "role": "End game menu prompt"
+        },
+        "game_over_splash": {
+          "file": "sprites/finJuego.png",
+          "width": 256,
+          "height": 240,
+          "role": "Game Over splash banner"
+        },
+        "stage_clear": {
+          "file": "sprites/finNivel.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage complete banner"
+        },
+        "continue_screen": {
+          "file": "sprites/continuar.png",
+          "width": 256,
+          "height": 240,
+          "role": "Continue prompt screen"
+        },
+        "help_screen": {
+          "file": "sprites/ayuda.png",
+          "width": 640,
+          "height": 480,
+          "role": "Controls and gameplay instructions screen"
+        },
+        "credits_screen": {
+          "file": "sprites/creditos.png",
+          "width": 640,
+          "height": 480,
+          "role": "Game developer credits screen"
+        },
+        "game_logo": {
+          "file": "sprites/logo.png",
+          "width": 512,
+          "height": 512,
+          "role": "Final Mission stylized game logo"
+        },
+        "publisher_splash": {
+          "file": "sprites/precentacion.png",
+          "width": 640,
+          "height": 480,
+          "role": "Natsume opening presentation splash screen"
+        },
+        "prologue_screen": {
+          "file": "sprites/introduccion.png",
+          "width": 256,
+          "height": 240,
+          "role": "Story prologue narrative graphic"
+        },
+        "stage_1_preview": {
+          "file": "sprites/nivel1.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage 1 title card card preview"
+        }
+      }
+    },
+    "backgrounds": {
+      "stage_scenery": [
+        {
+          "file": "sprites/fondo1.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 1"
+        },
+        {
+          "file": "sprites/fondo2.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 2"
+        },
+        {
+          "file": "sprites/fondo3.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 3"
+        },
+        {
+          "file": "sprites/fondo4.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 4"
+        },
+        {
+          "file": "sprites/fondo5.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 5"
+        },
+        {
+          "file": "sprites/fondo6.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 6"
+        },
+        {
+          "file": "sprites/fondo7.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 7"
+        },
+        {
+          "file": "sprites/fondo8.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 8"
+        },
+        {
+          "file": "sprites/fondo9.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 9"
+        },
+        {
+          "file": "sprites/fondo10.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 10"
+        },
+        {
+          "file": "sprites/fondo11.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 11"
+        },
+        {
+          "file": "sprites/fondo12.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 12"
+        },
+        {
+          "file": "sprites/fondo13.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 13"
+        },
+        {
+          "file": "sprites/fondo14.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 14"
+        },
+        {
+          "file": "sprites/fondo15.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 15"
+        },
+        {
+          "file": "sprites/fondo16.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 16"
+        },
+        {
+          "file": "sprites/fondo17.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 17"
+        },
+        {
+          "file": "sprites/fondo18.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 18"
+        },
+        {
+          "file": "sprites/fondo19.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 19"
+        },
+        {
+          "file": "sprites/fondo20.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage parallax scrolling segment 20"
+        },
+        {
+          "file": "sprites/fondo21MGF.png",
+          "width": 256,
+          "height": 240,
+          "role": "Stage scrolling segment 21 (Boss arena backdrop)"
+        }
+      ],
+      "intro_cinematic": [
+        {
+          "file": "sprites/fondoIntroduccion1.png",
+          "width": 256,
+          "height": 240,
+          "role": "Cinematic intro cutscene background panel 1"
+        },
+        {
+          "file": "sprites/fondoIntroduccion2.png",
+          "width": 256,
+          "height": 240,
+          "role": "Cinematic intro cutscene background panel 2"
+        },
+        {
+          "file": "sprites/fondoIntroduccion3.png",
+          "width": 512,
+          "height": 240,
+          "role": "Cinematic intro cutscene background panel 3"
+        }
+      ]
+    },
+    "tiles": {
+      "nes_chr_rom_atlas": {
+        "file": "sprites/nes_chr_tiles.png",
+        "width": 1024,
+        "height": 512,
+        "role": "Complete dumped 128KB NES CHR-ROM 2bpp pattern table atlas (1024x512 PNG)"
+      }
+    }
+  },
+  "audio": {
+    "sfx": {
+      "disparo": {
+        "file": "audio/disparo.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.454,
+        "description": "Player vulcan gun shooting sound effect"
+      },
+      "disparoL": {
+        "file": "audio/disparoL.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.23,
+        "description": "Laser cannon firing sound effect"
+      },
+      "explosion": {
+        "file": "audio/explosion.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.749,
+        "description": "Enemy / missile explosion sound effect"
+      },
+      "poder": {
+        "file": "audio/poder.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.65,
+        "description": "Power-up item pickup sound effect"
+      },
+      "muriendo": {
+        "file": "audio/muriendo.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 1.668,
+        "description": "Player soldier defeated death cry sound effect"
+      },
+      "pausa": {
+        "file": "audio/pausa.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.609,
+        "description": "Game pause sound effect"
+      },
+      "finDeJuego": {
+        "file": "audio/finDeJuego.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 5.253,
+        "description": "Game over sequence audio chime"
+      }
+    },
+    "bgm": {
+      "musica": {
+        "file": "audio/musica.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 29.778,
+        "description": "Stage 1 background battle theme (BGM loop)"
+      },
+      "menu": {
+        "file": "audio/menu.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 0.751,
+        "description": "Main title menu theme"
+      },
+      "introduccion": {
+        "file": "audio/introduccion.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 107.17,
+        "description": "Full cinematic introduction story background track"
+      },
+      "comienzo1": {
+        "file": "audio/comienzo1.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 3.867,
+        "description": "Stage 1 mission start fanfare"
+      },
+      "precentacion1": {
+        "file": "audio/precentacion1.wav",
+        "channels": 2,
+        "sample_rate": 44100,
+        "bit_depth": 16,
+        "duration_seconds": 1.115,
+        "description": "Natsume company logo splash jingle"
+      }
+    }
+  },
+  "data": {
+    "game_config": {
+      "file": "data/datos.txt",
+      "format": "Plain text newline-delimited key-value configuration array",
+      "description": "Internal game configuration settings (audio enabled, difficulty, high score, stage progress)"
+    },
+    "level_data": {
+      "file": "data/datosNiveles.txt",
+      "format": "Plain text newline-delimited actor spawn matrix",
+      "description": "Stage 1 enemy spawn specifications (actor class, X position, Y position, stage name)",
+      "actors_count": 59
+    },
+    "palettes": {
+      "file": "data/palettes.json",
+      "format": "JSON PPU palette map",
+      "description": "Complete NES Stage 1 - 5 PPU 2bpp color palettes extracted from PRG-ROM at offsets $01E05, $01E28, etc."
+    }
+  }
+}
