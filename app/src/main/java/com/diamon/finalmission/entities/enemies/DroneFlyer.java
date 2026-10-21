@@ -12,10 +12,10 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Enemigo Volador de Final Mission NES:
- * Drones voladores rápidos que se desplazan en ondas sinusoidales y atacan en escuadrones.
+ * Drone Flyer enemy from Final Mission NES:
+ * High-speed aerial attack drones that fly in sinusoidal wave formations and attack in squads.
  */
-public class Volador extends Enemy {
+public class DroneFlyer extends Enemy {
 
     private final float baseSpeed;
     private final float startY;
@@ -25,7 +25,7 @@ public class Volador extends Enemy {
     private int animFrame = 0;
     private final boolean moveLeft;
 
-    public Volador(float x, float y, boolean moveLeft) {
+    public DroneFlyer(float x, float y, boolean moveLeft) {
         super(x, y, 16f, 16f, 2f, 200);
         this.startY = y;
         this.moveLeft = moveLeft;
@@ -50,22 +50,22 @@ public class Volador extends Enemy {
 
         waveTimer += dt * 3.5f;
 
-        // Movimiento sinusoidal
+        // Sinusoidal wave flight
         float speed = moveLeft ? (baseSpeed + scrollSpeed) : -baseSpeed;
         x -= speed * dt;
         y = startY + (float) Math.sin(waveTimer) * 28f;
 
-        // Disparo
+        // Aimed shooting
         shootTimer -= dt;
         if (shootTimer <= 0f) {
             shootTimer = 2.2f + (float) (Math.random() * 1.0f);
-            if (x > 10 && x < 240 && player.alive) {
+            if (x > 10 && x < 450 && player.alive) {
                 enemyBullets.add(Bullet.createEnemyNormal(x + width / 2f, y + height / 2f,
                         player.x + player.width / 2f, player.y + player.height / 2f, 110f));
             }
         }
 
-        if (x < -30 || x > 300) {
+        if (x < -50 || x > 600) {
             alive = false;
         }
     }

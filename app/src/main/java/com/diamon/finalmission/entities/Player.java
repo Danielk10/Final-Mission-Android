@@ -12,13 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Personaje jugador (Arnold / Sigourney) para Final Mission.
- * Equipado con propulsión por jetpack, disparo automático continuo,
- * gestión de satélites y sistema de salud/vidas fiel a NES.
+ * Player Character (Sparky / Sergei Missionov) for Final Mission (Japanese NES):
+ * - 3 Health blocks / max HP = 3 (strictly authentic Japanese Final Mission, unlike US 6 HP).
+ * - Authentic shooting animation from original engine:
+ *   * Idle / movement without firing: frame 1 (jugador1D1.png / jugador1I1.png).
+ *   * Firing: alternating between frame 2 and frame 3 (jugador1D2/3.png or jugador1I2/3.png).
+ * - Orbital satellites with 360-degree rotation and angle locking.
  */
 public class Player {
 
-    public static final int MAX_HEALTH = 6;
+    public static final int MAX_HEALTH = 3;
     public static final int STARTING_LIVES = 3;
 
     public float x = 40f;
@@ -27,7 +30,7 @@ public class Player {
     public float height = 29f;
 
     public boolean facingRight = true;
-    public int characterId = 1; // 1 = Arnold, 2 = Sigourney
+    public int characterId = 1; // 1 = Sparky (1P), 2 = Sergei Missionov (2P)
     public float screenWidth = 256f;
     public int health = MAX_HEALTH;
     public int lives = STARTING_LIVES;
@@ -36,18 +39,19 @@ public class Player {
     public WeaponType weaponType = WeaponType.NORMAL;
     public float speedMultiplier = 1.0f;
 
-    // Satélites orbitales (hasta 2)
+    // Orbital satellites (up to 2)
     public final List<Satellite> satellites = new ArrayList<>();
 
-    // Cuadros de animación jetpack
-    private float animTimer = 0f;
-    private int animFrame = 0;
+    // Firing state & animation
+    public boolean isFiring = false;
+    private float fireAnimTimer = 0f;
+    private int fireAnimFrame = 0;
 
-    // Cadencia de disparo continuo
+    // Continuous autofire cooldown
     private float fireCooldown = 0f;
-    private static final float FIRE_RATE = 0.12f; // ~8 disparos/segundo
+    private static final float FIRE_RATE = 0.12f; // ~8 shots per second
 
-    // Invulnerabilidad y parpadeo tras daño o reaparición
+    // Invulnerability & damage flicker
     public float immuneTimer = 0f;
     private static final float IMMUNE_DURATION = 2.0f;
     private float blinkTimer = 0f;
@@ -66,10 +70,13 @@ public class Player {
         weaponType = WeaponType.NORMAL;
         speedMultiplier = 1.0f;
         alive = true;
-        immuneTimer = 2.0f; // Breve inmunidad al comenzar
+        immuneTimer = 2.0f;
+        isFiring = false;
+        fireAnimTimer = 0f;
+        fireAnimFrame = 0;
         satellites.clear();
-        // Iniciar con 1 satélite para acción arcade clásica de NES
         satellites.add(new Satellite(0));
+        satellites.add(new Satellite(1));
     }
 
     public void addSatellite() {
@@ -86,14 +93,21 @@ public class Player {
                        List<Bullet> bulletList, AudioManager audio) {
         if (!alive) return;
 
-        // Animación de propulsión de jetpack
-        animTimer += dt;
-        if (animTimer >= 0.08f) {
-            animTimer = 0f;
-            animFrame = (animFrame + 1) % 6;
+        this.isFiring = isTouching;
+
+        // Firing animation (alternates frames 2 and 3 while firing)
+        if (isFiring) {
+            fireAnimTimer += dt;
+            if (fireAnimTimer >= 0.08f) {
+                fireAnimTimer = 0f;
+                fireAnimFrame = (fireAnimFrame + 1) % 2;
+            }
+        } else {
+            fireAnimTimer = 0f;
+            fireAnimFrame = 0;
         }
 
-        // Gestión de invulnerabilidad
+        // Invulnerability management
         if (immuneTimer > 0f) {
             immuneTimer -= dt;
             blinkTimer += dt;
@@ -105,18 +119,18 @@ public class Player {
             visible = true;
         }
 
-        // Límites en pantalla horizontal widescreen retro
+        // Screen boundary limits
         x = Math.max(2f, Math.min(screenWidth - width - 2f, x));
         y = Math.max(16f, Math.min(224f - height - 4f, y));
 
-        // Actualizar satélites
+        // Update orbital satellites
         float centerX = x + width / 2f;
         float centerY = y + height / 2f;
         for (Satellite sat : satellites) {
             sat.update(dt, centerX, centerY, lockSatellites, satelliteAimAngle);
         }
 
-        // Cadencia y disparo automático continuo mientras se toca la pantalla
+        // Continuous autofire while touching the screen
         if (fireCooldown > 0f) {
             fireCooldown -= dt;
         }
@@ -128,8 +142,8 @@ public class Player {
     }
 
     private void fire(List<Bullet> bulletList, AudioManager audio) {
-        float muzzleX = facingRight ? (x + width) : x;
-        float muzzleY = y + height / 2f - 2f;
+        float muzzleX = facingRight ? (x + width + 2f) : (x - 8f);
+        float muzzleY = y + height / 2f - 3f;
 
         switch (weaponType) {
             case NORMAL:
@@ -138,8 +152,8 @@ public class Player {
                 break;
             case WIDE:
                 bulletList.add(Bullet.createPlayerWide(muzzleX, muzzleY, facingRight, 0f));
-                bulletList.add(Bullet.createPlayerWide(muzzleX, muzzleY, facingRight, -18f));
-                bulletList.add(Bullet.createPlayerWide(muzzleX, muzzleY, facingRight, 18f));
+                bulletList.add(Bullet.createPlayerWide(muzzleX, muzzleY, facingRight, -15f));
+                bulletList.add(Bullet.createPlayerWide(muzzleX, muzzleY, facingRight, 15f));
                 audio.playSound(AudioManager.SFX_DISPARO);
                 break;
             case LASER:
@@ -148,7 +162,7 @@ public class Player {
                 break;
         }
 
-        // Disparo coordinado de los satélites
+        // Coordinated satellite gunfire
         for (Satellite sat : satellites) {
             bulletList.add(sat.fire());
         }
@@ -166,7 +180,7 @@ public class Player {
         if (health <= 0) {
             lives--;
             if (lives > 0) {
-                // Reaparecer
+                // Respawn with full 3 pips
                 health = MAX_HEALTH;
                 x = 40f;
                 y = 100f;
@@ -191,43 +205,53 @@ public class Player {
     }
 
     public RectF getBounds() {
-        return new RectF(x + 3f, y + 4f, x + width - 3f, y + height - 3f);
+        return new RectF(x + 2f, y + 2f, x + width - 2f, y + height - 2f);
     }
 
+    /**
+     * Authentic Japanese Final Mission character names:
+     * 1P = SPARKY
+     * 2P = SERGEI MISSIONOV
+     */
     public String getCharacterName() {
-        return characterId == 2 ? "SIGOURNEY" : "ARNOLD";
+        return characterId == 2 ? "SERGEI MISSIONOV" : "SPARKY";
+    }
+
+    public String getShortCharacterName() {
+        return characterId == 2 ? "SERGEI" : "SPARKY";
     }
 
     public void render(Canvas canvas, AssetLoader loader, Paint paint) {
         if (!alive || !visible) return;
 
-        // Renderizar satélites
+        // Render satellites
         for (Satellite sat : satellites) {
             sat.render(canvas, loader, paint);
         }
 
-        // Renderizar sprite de Arnold (1P) o Sigourney (2P) con animación de propulsión de jetpack
+        // Render player sprite with authentic frame switching:
+        // Idle/Movement: frame 1 (jugador1D1.png / jugador1I1.png)
+        // Shooting: alternation between frame 2 and frame 3
         String spriteName;
-        boolean needsManualFlip = false;
         if (characterId == 2) {
-            if (facingRight) {
-                int frameIdx = (animFrame % 4) + 1;
-                spriteName = "jugador2D" + frameIdx + ".png";
+            // Sergei Missionov (2P)
+            if (isFiring) {
+                int frameIdx = (fireAnimFrame % 2) + 2;
+                spriteName = facingRight ? ("jugador2D" + frameIdx + ".png") : "jugador2I1.png";
             } else {
-                spriteName = "jugador2I1.png";
+                spriteName = facingRight ? "jugador2D1.png" : "jugador2I1.png";
             }
         } else {
-            if (facingRight) {
-                int frameIdx = (animFrame % 6) + 1;
-                spriteName = "jugador1D" + frameIdx + ".png";
+            // Sparky (1P)
+            if (isFiring) {
+                int frameIdx = (fireAnimFrame % 2) + 2;
+                spriteName = facingRight ? ("jugador1D" + frameIdx + ".png") : ("jugador1I" + frameIdx + ".png");
             } else {
-                int frameIdx = (animFrame % 3) + 1;
-                spriteName = "jugador1I" + frameIdx + ".png";
+                spriteName = facingRight ? "jugador1D1.png" : "jugador1I1.png";
             }
         }
 
         Bitmap bmp = loader.getBitmap(spriteName);
-
         if (bmp != null) {
             float drawX = x + (width - bmp.getWidth()) / 2f;
             float drawY = y + (height - bmp.getHeight()) / 2f;

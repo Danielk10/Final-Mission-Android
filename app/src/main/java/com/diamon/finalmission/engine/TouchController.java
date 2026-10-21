@@ -1,25 +1,34 @@
 package com.diamon.finalmission.engine;
 
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 
 /**
- * Gestor táctil multitáctil para Final Mission.
- * Adaptado directamente de AI-Rebellion (touch.rs) con fidelidad estricta al clásico de NES:
- * - Dedo primario (movimiento): Arrastre relativo 1:1 (deltaX, deltaY) para que el dedo NUNCA tape al jugador.
- *   Handoff suave si el jugador alterna dedos.
- * - Dedo secundario (libre):
- *   * Arrastre 360°: apunta y bloquea los satélites en cualquier ángulo.
- *   * Flick horizontal (< 0.40s): cambia la dirección del jugador (izquierda / derecha).
- *   * Toque rápido (< 0.40s, sin arrastre): conmuta el modo bloqueo/órbita de los satélites.
- *   * Sin bombas (NES auténtico).
- * - Disparo continuo automático mientras se toca la pantalla.
+ * Ergonomic multi-touch controller optimized for widescreen landscape arcade gameplay in Final Mission:
+ * 1. Left Half (Movement & Jetpack):
+ *    - 1:1 direct relative follow (touchDeltaX, touchDeltaY): dragging anywhere on the left half moves
+ *      the soldier smoothly in 8 directions without the player's thumb ever obscuring the sprite.
+ *    - Smooth finger handoff if player swaps fingers.
+ * 2. Rapid Facing Direction Controls (Left / Right turn):
+ *    - Directional flick: quick horizontal swipe flips player facing direction instantly.
+ *    - Double-tap: quick consecutive tap instantly toggles or turns player direction.
+ * 3. Right Half (Aiming & Satellite Lock):
+ *    - Dragging on the right half aims orbital satellites 360-degrees in that direction and locks them.
+ *    - Quick tap on right half toggles satellite lock mode on/off.
+ *    - On-screen Satellite Lock button hit-testing.
+ * 4. Responsive Arcade Autofire:
+ *    - Continuous automatic fire whenever any finger is touching the screen.
  */
 public class TouchController {
 
     public int primaryId = -1;
     public int secondaryId = -1;
 
+    // Movement tracking
+    public float touchDeltaX = 0f;
+    public float touchDeltaY = 0f;
+    // Backward compatibility aliases
     public float deltaXTactil = 0f;
     public float deltaYTactil = 0f;
     public boolean touchInitialized = false;
@@ -43,19 +52,47 @@ public class TouchController {
     public boolean isTouching = false;
     public boolean isFiring = false;
 
+    // Satellite aim & lock
     public boolean satelliteLock = false;
     public Float satelliteTargetAngle = null;
 
-    // Indicador de flick: Boolean.TRUE = Derecha, Boolean.FALSE = Izquierda, null = sin flick
+    // Facing direction change indicator: true = Right, false = Left, null = no change
     public Boolean flickFacing = null;
+
+    // Double-tap turnaround tracking
+    private long lastTapTime = 0;
+    private float lastTapX = 0f;
+    private float lastTapY = 0f;
+    private static final long DOUBLE_TAP_TIMEOUT_MS = 280;
+
+    // On-screen Satellite Lock button bounds (in virtual coordinates)
+    public final RectF lockButtonBounds = new RectF();
 
     public TouchController() {
         reset();
     }
 
+    public void updateLockButtonBounds(float virtualWidth, float virtualHeight) {
+        // Positioned neatly in bottom-right corner of widescreen view
+        float btnW = 54f;
+        float btnH = 26f;
+        float marginX = 8f;
+        float marginY = 8f;
+        lockButtonBounds.set(virtualWidth - btnW - marginX, virtualHeight - btnH - marginY,
+                virtualWidth - marginX, virtualHeight - marginY);
+    }
+
+    public boolean isTouchOnLockButton(float x, float y) {
+        // Generous padding for comfortable capacitive touch hitting
+        return (x >= lockButtonBounds.left - 6f && x <= lockButtonBounds.right + 6f &&
+                y >= lockButtonBounds.top - 6f && y <= lockButtonBounds.bottom + 6f);
+    }
+
     public void reset() {
         primaryId = -1;
         secondaryId = -1;
+        touchDeltaX = 0f;
+        touchDeltaY = 0f;
         deltaXTactil = 0f;
         deltaYTactil = 0f;
         touchInitialized = false;
@@ -89,8 +126,31 @@ public class TouchController {
     }
 
     public void onTouchDown(int pointerId, float x, float y, float playerX, float playerY) {
+        long now = System.currentTimeMillis();
+
+        // 1. Check if tapped the dedicated on-screen Satellite Lock button
+        if (isTouchOnLockButton(x, y)) {
+            satelliteLock = !satelliteLock;
+            isTouching = true;
+            isFiring = true;
+            return;
+        }
+
+        // 2. Double-tap detection for instant turnaround
+        if (now - lastTapTime < DOUBLE_TAP_TIMEOUT_MS) {
+            float distSq = (x - lastTapX) * (x - lastTapX) + (y - lastTapY) * (y - lastTapY);
+            if (distSq < 1600f) { // Within 40px radius
+                // Instant turnaround: if tapped to the left of player -> face left; if right -> face right
+                flickFacing = (x >= playerX);
+            }
+        }
+        lastTapTime = now;
+        lastTapX = x;
+        lastTapY = y;
+
+        // 3. Pointer Assignment
         if (primaryId == -1) {
-            // Primer dedo: control de movimiento y disparo continuo
+            // Primary touch: 1:1 direct follow & jetpack flight
             primaryId = pointerId;
             primaryX = x;
             primaryY = y;
@@ -98,14 +158,16 @@ public class TouchController {
             primaryStartY = y;
             primaryTouchTime = 0f;
 
-            deltaXTactil = x - playerX;
-            deltaYTactil = y - playerY;
+            touchDeltaX = x - playerX;
+            touchDeltaY = y - playerY;
+            deltaXTactil = touchDeltaX;
+            deltaYTactil = touchDeltaY;
             touchInitialized = true;
 
             isTouching = true;
             isFiring = true;
         } else if (secondaryId == -1 && pointerId != primaryId) {
-            // Segundo dedo (dedo libre)
+            // Secondary touch: satellite aiming & flick gestures
             secondaryId = pointerId;
             secondaryX = x;
             secondaryY = y;
@@ -115,6 +177,9 @@ public class TouchController {
             secondaryStartY = y;
             secondaryTouchTime = 0f;
             secondaryHasDragged = false;
+
+            isTouching = true;
+            isFiring = true;
         }
     }
 
@@ -126,8 +191,8 @@ public class TouchController {
             isFiring = true;
 
             if (touchInitialized) {
-                float newX = x - deltaXTactil;
-                float newY = y - deltaYTactil;
+                float newX = x - touchDeltaX;
+                float newY = y - touchDeltaY;
                 return new PointF(newX, newY);
             }
         } else if (secondaryId == pointerId) {
@@ -138,17 +203,17 @@ public class TouchController {
             float dy = y - secondaryStartY;
             float distSq = dx * dx + dy * dy;
 
-            // Giro rápido por flick horizontal en plena trayectoria
-            if (!secondaryHasDragged && Math.abs(dx) >= 20f && Math.abs(dx) >= Math.abs(dy) * 1.4f && secondaryTouchTime < 0.35f) {
+            // Horizontal flick during motion
+            if (!secondaryHasDragged && Math.abs(dx) >= 18f && Math.abs(dx) >= Math.abs(dy) * 1.3f && secondaryTouchTime < 0.35f) {
                 flickFacing = dx > 0f;
             }
 
-            // Control y apuntado de satélites en 360 grados
-            if (distSq > 100f) { // umbral de 10 píxeles
+            // 360-degree satellite aiming and lock
+            if (distSq > 80f) { // ~9px deadzone
                 secondaryHasDragged = true;
                 satelliteLock = true;
 
-                // Clamping flotante con radio de 60 px
+                // Virtual drag vector clamping
                 float dist = (float) Math.sqrt(distSq);
                 float maxRadius = 60f;
                 if (dist > maxRadius) {
@@ -168,21 +233,24 @@ public class TouchController {
         if (primaryId == pointerId) {
             float pDx = x - primaryStartX;
             float pDy = y - primaryStartY;
-            if (primaryTouchTime < 0.35f && Math.abs(pDx) >= 20f && Math.abs(pDx) >= Math.abs(pDy) * 1.3f) {
-                // Flick rápido del dedo primario -> cambiar orientación
+            if (primaryTouchTime < 0.35f && Math.abs(pDx) >= 18f && Math.abs(pDx) >= Math.abs(pDy) * 1.3f) {
+                // Quick horizontal flick with primary finger
                 flickFacing = pDx > 0f;
             }
 
             if (secondaryId != -1) {
-                // Smooth handoff: el segundo dedo asume el movimiento
+                // Smooth handoff: secondary finger seamlessly becomes primary
                 primaryId = secondaryId;
                 primaryX = secondaryX;
                 primaryY = secondaryY;
                 primaryStartX = secondaryX;
                 primaryStartY = secondaryY;
                 primaryTouchTime = 0f;
-                deltaXTactil = primaryX - playerX;
-                deltaYTactil = primaryY - playerY;
+
+                touchDeltaX = primaryX - playerX;
+                touchDeltaY = primaryY - playerY;
+                deltaXTactil = touchDeltaX;
+                deltaYTactil = touchDeltaY;
                 touchInitialized = true;
 
                 secondaryId = -1;
@@ -202,10 +270,10 @@ public class TouchController {
 
             if (touchTime < 0.40f) {
                 if (Math.abs(totalDx) >= 18f && Math.abs(totalDx) >= Math.abs(totalDy) * 1.1f) {
-                    // Latigazo horizontal rápido (Flick) -> Voltear personaje
+                    // Quick flick turnaround
                     flickFacing = totalDx > 0f;
                 } else if (totalDistSq < 400f) {
-                    // Toque rápido sin arrastre (< 20 px) -> conmuta bloqueo de satélites
+                    // Quick tap without dragging -> toggle satellite lock
                     satelliteLock = !satelliteLock;
                 }
             }

@@ -11,10 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Cargador y gestor de texturas y sprites para Final Mission.
- * Los fondos y pantallas (256x240) se cargan a resolución nativa NES 1:1.
- * Los sprites de actores exportados a 4x se reescalan a 1/4 con filtro nearest-neighbor
- * para coincidir con la cuadrícula de píxeles del lienzo retro virtual 256x224.
+ * Asset loader and texture manager for Final Mission.
+ * Backgrounds and full menu screens (256x240) are loaded at native 1:1 NES resolution.
+ * Character actors and projectiles exported at 4x resolution are downscaled by 1/4 with
+ * nearest-neighbor filtering to match the pixel grid of the retro 256x224 virtual canvas.
  */
 public class AssetLoader {
     private static final String TAG = "AssetLoader";
@@ -37,7 +37,7 @@ public class AssetLoader {
             is.close();
 
             if (raw == null) {
-                Log.e(TAG, "No se pudo decodificar imagen: " + name);
+                Log.e(TAG, "Failed to decode sprite asset: " + name);
                 return null;
             }
 
@@ -45,13 +45,13 @@ public class AssetLoader {
             cache.put(name, processed);
             return processed;
         } catch (Exception e) {
-            Log.e(TAG, "Error cargando sprite: " + name, e);
+            Log.e(TAG, "Error loading sprite asset: " + name, e);
             return null;
         }
     }
 
     private Bitmap processBitmap(String name, Bitmap raw) {
-        // Fondos y pantallas de menú/UI permanecen a resolución nativa
+        // Full backgrounds and UI/menu screens retain native NES resolution
         if (name.startsWith("fondo") || name.startsWith("menu") || name.startsWith("barra")
                 || name.startsWith("fin") || name.startsWith("intro") || name.equals("nivel1.png")
                 || name.equals("ayuda.png") || name.equals("creditos.png") || name.equals("precentacion.png")
@@ -59,7 +59,7 @@ public class AssetLoader {
             return raw;
         }
 
-        // Los actores y proyectiles exportados a 4x se escalan a 1/4
+        // Actors and projectiles exported at 4x are downscaled to 1/4 nearest-neighbor
         int targetW = Math.max(1, raw.getWidth() / 4);
         int targetH = Math.max(1, raw.getHeight() / 4);
 

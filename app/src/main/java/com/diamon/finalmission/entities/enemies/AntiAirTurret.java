@@ -12,15 +12,15 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Enemigo AntiAéreo de Final Mission NES:
- * Torretas estacionarias ancladas a suelo, techo o paredes que rastrean al jugador.
+ * Anti-Air Turret enemy from Final Mission NES:
+ * Stationary turrets anchored to floor, ceiling, or diagonal terrain tracking the player.
  */
-public class AntiAereo extends Enemy {
+public class AntiAirTurret extends Enemy {
 
     public enum Mount {
-        GROUND,  // Suelo (H)
-        CEILING, // Techo (V)
-        DIAGONAL // Pared / Esquina (D)
+        GROUND,  // Floor (H)
+        CEILING, // Ceiling (V)
+        DIAGONAL // Wall / Corner (D)
     }
 
     private final Mount mount;
@@ -28,7 +28,7 @@ public class AntiAereo extends Enemy {
     private float animTimer = 0f;
     private int animFrame = 0;
 
-    public AntiAereo(float x, float y, Mount mount) {
+    public AntiAirTurret(float x, float y, Mount mount) {
         super(x, y, 15f, 16f, 3f, 300);
         this.mount = mount;
     }
@@ -37,7 +37,7 @@ public class AntiAereo extends Enemy {
     public void update(float dt, Player player, List<Bullet> enemyBullets, float scrollSpeed) {
         if (!alive) return;
 
-        // Se desplaza con el scroll del escenario
+        // Moves with level scroll
         x -= scrollSpeed * dt;
 
         if (hitFlashTimer > 0f) {
@@ -50,14 +50,15 @@ public class AntiAereo extends Enemy {
             animFrame = (animFrame + 1) % 2;
         }
 
-        // Disparo periódico hacia la posición del jugador
+        // Periodic aiming and firing at player position
         shootTimer -= dt;
         if (shootTimer <= 0f) {
             shootTimer = 1.6f + (float) (Math.random() * 0.6f);
-            if (x > 0 && x < 250 && player.alive) {
+            if (x > -10 && x < 450 && player.alive) {
                 float barrelX = x + width / 2f;
                 float barrelY = (mount == Mount.GROUND) ? y : (y + height);
-                enemyBullets.add(Bullet.createEnemyNormal(barrelX, barrelY, player.x + player.width / 2f, player.y + player.height / 2f, 105f));
+                enemyBullets.add(Bullet.createEnemyNormal(barrelX, barrelY,
+                        player.x + player.width / 2f, player.y + player.height / 2f, 105f));
             }
         }
 

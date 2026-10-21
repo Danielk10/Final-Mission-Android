@@ -12,17 +12,17 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Enemigo Robot (Cyborg acorazado) de Final Mission NES:
- * Soldado pesado que patrulla plataformas e intercambia fuego frontal directo.
+ * Walker Robot (Armored Cyborg Soldier) enemy from Final Mission NES:
+ * Heavy bipedal mechanized soldier patrolling platforms and engaging in direct frontal fire.
  */
-public class Robot extends Enemy {
+public class WalkerRobot extends Enemy {
 
     private boolean facingRight = false;
     private float patrolTimer = 0f;
     private float patrolSpeed = 20f;
     private float shootTimer = 1.2f;
 
-    public Robot(float x, float y) {
+    public WalkerRobot(float x, float y) {
         super(x, y, 24f, 32f, 6f, 500);
     }
 
@@ -34,7 +34,7 @@ public class Robot extends Enemy {
             hitFlashTimer -= dt;
         }
 
-        // Desplazamiento de scroll + patrulla
+        // Level scroll displacement + patrol walking
         x -= scrollSpeed * dt;
 
         patrolTimer += dt;
@@ -45,16 +45,16 @@ public class Robot extends Enemy {
 
         x += (facingRight ? patrolSpeed : -patrolSpeed) * dt;
 
-        // Orientación hacia el jugador si está cerca
+        // Face player if in proximity
         if (Math.abs(player.x - x) < 180f) {
             facingRight = (player.x > x);
         }
 
-        // Disparo en ráfagas
+        // Firing volleys
         shootTimer -= dt;
         if (shootTimer <= 0f) {
             shootTimer = 1.8f;
-            if (x > 0 && x < 250 && player.alive) {
+            if (x > -10 && x < 450 && player.alive) {
                 float muzzleX = facingRight ? (x + width) : x;
                 float muzzleY = y + 12f;
                 enemyBullets.add(Bullet.createEnemyNormal(muzzleX, muzzleY,

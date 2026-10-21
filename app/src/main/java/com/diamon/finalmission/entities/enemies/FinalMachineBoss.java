@@ -16,25 +16,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Jefe Final de la Fase 1: Máquina Gran Final (MaquinaFinal).
- * Fortaleza biomecánica anclada en la pantalla 21 (fondo21MGF.png):
- * - Blindaje acorazado y torretas destruibles (maquinas.png, maquinaParedD/I).
- * - Orbes de plasma defensivos rotatorios (bola1..16.png) que protegen el núcleo y desvían disparos.
- * - 3 Fases de combate dinámicas:
- *   * Fase 1 (HP > 50): Ráfagas láser dirigidas de 3 vías (3-way aimed laser volleys).
- *   * Fase 2 (20 < HP <= 50): Andanadas de esferas de energía destruibles (destructible energy spheres).
- *   * Fase 3 (HP <= 20): Ráfagas rápidas de desesperación y sobrecarga en arco (desperate bullet barrages).
- * - Secuencia de explosiones en cadena multifase (explosionB1..5.png) al ser derrotado.
+ * Stage 1 Final Boss: Final Machine (FinalMachineBoss / MaquinaFinal).
+ * Biomechanical mega-fortress anchored at segment 21 (fondo21MGF.png):
+ * - Armored plating and integrated destructible wall turrets (maquinas.png, WallTurret).
+ * - Rotating plasma defensive orbs (bola1..16.png) shielding the core and deflecting shots.
+ * - 3 dynamic combat phases:
+ *   * Phase 1 (HP > 50): 3-way aimed laser volleys.
+ *   * Phase 2 (20 < HP <= 50): Barrages of destructible energy spheres.
+ *   * Phase 3 (HP <= 20): Desperation overload spread barrages.
+ * - Multi-phase chain explosion finale upon defeat (explosionB1..5.png).
  */
-public class MaquinaFinal extends Enemy {
+public class FinalMachineBoss extends Enemy {
 
     public static final float BOSS_MAX_HP = 80f;
 
-    // Torretas de pared destructibles integradas
-    public final MaquinaPared turretTop;
-    public final MaquinaPared turretBottom;
+    // Integrated destructible wall turrets
+    public final WallTurret turretTop;
+    public final WallTurret turretBottom;
 
-    // Orbes defensivos de plasma giratorios (bola1..16.png)
+    // Revolving defensive plasma orbs (bola1..16.png)
     public static class DefensiveOrb {
         public float angle;
         public float radius = 34f;
@@ -70,27 +70,35 @@ public class MaquinaFinal extends Enemy {
 
     public final List<DefensiveOrb> orbs = new ArrayList<>();
 
-    // Variables de ataque y oscilación
+    // Hover oscillation & combat timing
     private float hoverTimer = 0f;
     private float attackTimer = 1.2f;
     private float coreAnimTimer = 0f;
     public final float startY;
 
-    // Estado de derrota y cadena de explosiones
+    // Defeat sequence state & chain explosions
     public boolean isDefeated = false;
     public float defeatTimer = 0f;
     private float explosionInterval = 0.15f;
     private float nextExplosionTimer = 0f;
+    public String bossName = "FINAL MACHINE";
 
-    public MaquinaFinal(float x, float y) {
-        super(x, y, 36f, 44f, BOSS_MAX_HP, 20000);
+    public FinalMachineBoss(float x, float y) {
+        this(x, y, "FINAL MACHINE", BOSS_MAX_HP);
+    }
+
+    public FinalMachineBoss(float x, float y, String name, float maxHp) {
+        super(x, y, 36f, 44f, maxHp, 20000);
         this.startY = y;
+        this.bossName = (name != null && !name.isEmpty()) ? name : "FINAL MACHINE";
+        this.maxHp = maxHp;
+        this.hp = maxHp;
 
-        // Instanciar torretas de pared superior e inferior
-        this.turretTop = new MaquinaPared(x + 8f, 26f, true);
-        this.turretBottom = new MaquinaPared(x + 8f, 172f, true);
+        // Instantiate top and bottom wall turrets
+        this.turretTop = new WallTurret(x + 8f, 26f, true);
+        this.turretBottom = new WallTurret(x + 8f, 172f, true);
 
-        // Inicializar 3 orbes defensivos distribuidos a 120 grados
+        // Initialize 3 defensive orbs equidistant at 120-degree intervals
         for (int i = 0; i < 3; i++) {
             float orbAngle = (float) (i * 2.0 * Math.PI / 3.0);
             orbs.add(new DefensiveOrb(orbAngle));
@@ -111,7 +119,7 @@ public class MaquinaFinal extends Enemy {
 
         coreAnimTimer += dt;
 
-        // Actualizar torretas de pared
+        // Update wall turrets
         if (turretTop.alive) {
             turretTop.update(dt, player, enemyBullets, scrollSpeed);
         }
@@ -119,19 +127,19 @@ public class MaquinaFinal extends Enemy {
             turretBottom.update(dt, player, enemyBullets, scrollSpeed);
         }
 
-        // Si el jefe está derrotado, gestionar la cadena de explosiones
+        // When defeated, run chain explosion sequence
         if (isDefeated) {
             defeatTimer += dt;
             nextExplosionTimer -= dt;
             return;
         }
 
-        // 1. Oscilación y flotación vertical biomecánica
+        // 1. Biomechanical vertical floating oscillation
         hoverTimer += dt * 2.0f;
         float hoverRange = (getPhase() == 3) ? 30f : 18f;
         y = startY + (float) Math.sin(hoverTimer) * hoverRange;
 
-        // 2. Actualizar orbes defensivos de plasma
+        // 2. Update defensive plasma orbs
         float coreCenterX = x + 16f;
         float coreCenterY = y + height / 2f;
         float orbSpeed = (getPhase() == 3) ? 3.6f : 2.2f;
@@ -140,7 +148,7 @@ public class MaquinaFinal extends Enemy {
             orb.update(dt, coreCenterX, coreCenterY, orbSpeed);
         }
 
-        // 3. Fases de ataque
+        // 3. Attack phase execution
         attackTimer -= dt;
         if (attackTimer <= 0f) {
             executeAttackPhase(player, enemyBullets, coreCenterX, coreCenterY);
@@ -154,7 +162,7 @@ public class MaquinaFinal extends Enemy {
 
         switch (phase) {
             case 1: {
-                // FASE 1: Ráfagas láser dirigidas de 3 vías (3-way aimed laser volleys)
+                // PHASE 1: 3-way aimed laser volleys
                 attackTimer = 1.5f;
                 float angleToPlayer = (float) Math.atan2(player.y - coreY, player.x - coreX);
 
@@ -164,19 +172,19 @@ public class MaquinaFinal extends Enemy {
                 break;
             }
             case 2: {
-                // FASE 2: Andanadas de esferas de energía destruibles (destructible energy spheres)
+                // PHASE 2: Barrages of destructible energy spheres
                 attackTimer = 1.7f;
-                // Disparo de esferas ondulantes desde troneras superior e inferior
+                // Dual spherical projectiles from upper and lower ports
                 enemyBullets.add(Bullet.createBossEnergySphere(coreX - 10f, coreY - 20f, -120f, -25f));
                 enemyBullets.add(Bullet.createBossEnergySphere(coreX - 10f, coreY + 20f, -120f, 25f));
 
-                // Disparo central de apoyo
+                // Supporting center laser
                 float angleToPlayer = (float) Math.atan2(player.y - coreY, player.x - coreX);
                 enemyBullets.add(Bullet.createBossLaser(coreX - 8f, coreY, angleToPlayer, 150f));
                 break;
             }
             case 3: {
-                // FASE 3 (SOBRECARGA): Ráfagas rápidas de desesperación en abanico denso
+                // PHASE 3 (OVERLOAD): Dense desperation arc barrage
                 attackTimer = 0.85f;
                 float baseAngle = (float) Math.atan2(player.y - coreY, player.x - coreX);
 
@@ -190,8 +198,8 @@ public class MaquinaFinal extends Enemy {
     }
 
     /**
-     * Comprueba si un proyectil del jugador es interceptado y desviado por los orbes defensivos.
-     * Retorna true si el orbe absorbió o desvió el disparo, protegiendo al jefe.
+     * Checks if a player bullet is intercepted and deflected by rotating defensive orbs.
+     * Returns true if orb deflected the shot, protecting the boss core.
      */
     public boolean checkOrbDeflection(Bullet bullet, AudioManager audio) {
         if (isDefeated || orbs.isEmpty()) return false;
@@ -215,10 +223,10 @@ public class MaquinaFinal extends Enemy {
         if (hp <= 0f) {
             hp = 0f;
             isDefeated = true;
-            alive = true; // Se mantiene viva durante la cadena de explosiones
+            alive = true; // Stays active during the explosion sequence
             defeatTimer = 0f;
             nextExplosionTimer = 0f;
-            orbs.clear(); // Los orbes se disipan
+            orbs.clear(); // Dissipate defensive orbs
             return true;
         }
         return false;
@@ -231,7 +239,7 @@ public class MaquinaFinal extends Enemy {
             nextExplosionTimer = explosionInterval;
             audio.playSound(AudioManager.SFX_EXPLOSION);
 
-            // Coordenadas escalonadas aleatorias sobre la estructura de la fortaleza
+            // Staggered explosion coordinates across the fortress hull
             float offsetX = (float) ((Math.random() - 0.5) * 44f);
             float offsetY = (float) ((Math.random() - 0.5) * 80f);
 
@@ -242,7 +250,7 @@ public class MaquinaFinal extends Enemy {
 
     @Override
     public RectF getBounds() {
-        // Hitbox del núcleo vulnerable
+        // Vulnerable central core hitbox
         return new RectF(x + 4f, y + 4f, x + width, y + height - 4f);
     }
 
@@ -250,16 +258,15 @@ public class MaquinaFinal extends Enemy {
     public void render(Canvas canvas, AssetLoader loader, Paint paint) {
         Paint activePaint = getActivePaint(paint);
 
-        // 1. Blindaje acorazado y estructura de la fortaleza (maquinas.png)
+        // 1. Armored hull and fortress structure (maquinas.png)
         Bitmap plating = loader.getBitmap("maquinas.png");
         if (plating != null) {
-            // Se posiciona como mamparo acorazado del fondo
             float plateX = x - 24f;
             float plateY = y - 40f;
             canvas.drawBitmap(plating, plateX, plateY, activePaint);
         }
 
-        // 2. Torretas de pared superior e inferior
+        // 2. Top and bottom wall turrets
         if (turretTop.alive) {
             turretTop.render(canvas, loader, paint);
         }
@@ -267,7 +274,7 @@ public class MaquinaFinal extends Enemy {
             turretBottom.render(canvas, loader, paint);
         }
 
-        // 3. Núcleo central biomecánico (maquinaFinal.png)
+        // 3. Central biomechanical core (maquinaFinal.png)
         Bitmap core = loader.getBitmap("maquinaFinal.png");
         if (core != null) {
             float drawX = x + (width - core.getWidth()) / 2f;
@@ -275,7 +282,7 @@ public class MaquinaFinal extends Enemy {
             canvas.drawBitmap(core, drawX, drawY, activePaint);
         }
 
-        // 4. Orbes de plasma defensivos rotatorios (bola1..16.png)
+        // 4. Rotating plasma defensive orbs (bola1..16.png)
         if (!isDefeated) {
             for (DefensiveOrb orb : orbs) {
                 orb.render(canvas, loader, paint);

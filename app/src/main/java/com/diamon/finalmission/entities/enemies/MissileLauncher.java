@@ -12,10 +12,10 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Enemigo LanzaMisiles de Final Mission NES:
- * Plataforma blindada que abre su escotilla y dispara misiles guiados de alta potencia.
+ * Missile Launcher enemy from Final Mission NES:
+ * Armored mobile ground launcher that opens its hatch and fires high-threat guided missiles.
  */
-public class LanzaMisiles extends Enemy {
+public class MissileLauncher extends Enemy {
 
     private final boolean facingRight;
     private float fireTimer = 1.8f;
@@ -23,7 +23,7 @@ public class LanzaMisiles extends Enemy {
     private float hatchTimer = 0f;
     private boolean isLaunching = false;
 
-    public LanzaMisiles(float x, float y, boolean facingRight) {
+    public MissileLauncher(float x, float y, boolean facingRight) {
         super(x, y, 24f, 16f, 5f, 600);
         this.facingRight = facingRight;
     }
@@ -41,11 +41,11 @@ public class LanzaMisiles extends Enemy {
         fireTimer -= dt;
         if (fireTimer <= 0.6f && !isLaunching) {
             isLaunching = true;
-            hatchFrame = 2; // Apertura de compuerta
+            hatchFrame = 2; // Hatch opening
         }
 
         if (fireTimer <= 0.3f && hatchFrame == 2) {
-            hatchFrame = 3; // Totalmente abierto
+            hatchFrame = 3; // Fully open
         }
 
         if (fireTimer <= 0f) {
@@ -53,7 +53,7 @@ public class LanzaMisiles extends Enemy {
             isLaunching = false;
             hatchFrame = 1;
 
-            if (x > 0 && x < 250 && player.alive) {
+            if (x > -10 && x < 450 && player.alive) {
                 float launchX = facingRight ? (x + width - 4) : (x + 4);
                 float launchY = y - 4f;
                 enemyBullets.add(Bullet.createEnemyMissile(launchX, launchY, facingRight));

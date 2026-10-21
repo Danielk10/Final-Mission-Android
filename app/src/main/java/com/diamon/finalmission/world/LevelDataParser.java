@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Analizador y cargador de definiciones de apariciones (spawns) de enemigos para Final Mission.
- * Lee el archivo de datos original app/src/main/assets/data/datosNiveles.txt
- * con soporte para los 8 niveles (Nivel 1 a Nivel 8).
+ * Parser and loader for authentic enemy spawn definitions in Final Mission.
+ * Reads the authentic data file app/src/main/assets/data/datosNiveles.txt
+ * with structured support across all stages.
  */
 public class LevelDataParser {
     private static final String TAG = "LevelDataParser";
@@ -49,27 +49,20 @@ public class LevelDataParser {
 
     public void loadData(Context context) {
         levelSpawns.clear();
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 1; i <= StageConfig.TOTAL_STAGES; i++) {
             levelSpawns.put("Nivel " + i, new ArrayList<>());
         }
 
         try (InputStream is = context.getAssets().open(ASSET_PATH);
              BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
 
-            String line1 = reader.readLine(); // boolean leerDatosInternos
-            String line2 = reader.readLine(); // int numeroActores
-            String line3 = reader.readLine(); // int numeroNivel
+            String line1 = reader.readLine(); // boolean readInternalData
+            String line2 = reader.readLine(); // int actorCount
+            String line3 = reader.readLine(); // int levelNumber
 
             if (line3 != null && !line3.trim().isEmpty()) {
                 try {
                     defaultLevel = Integer.parseInt(line3.trim());
-                } catch (NumberFormatException ignored) {}
-            }
-
-            int expectedCount = 0;
-            if (line2 != null && !line2.trim().isEmpty()) {
-                try {
-                    expectedCount = Integer.parseInt(line2.trim());
                 } catch (NumberFormatException ignored) {}
             }
 
@@ -99,14 +92,14 @@ public class LevelDataParser {
                     list.add(def);
                     count++;
                 } catch (NumberFormatException e) {
-                    Log.w(TAG, "Error parseando coordenadas de actor: " + typeLine, e);
+                    Log.w(TAG, "Error parsing actor coordinate: " + typeLine, e);
                 }
             }
 
             isLoaded = true;
-            Log.i(TAG, "Cargadas " + count + " definiciones de actores desde " + ASSET_PATH);
+            Log.i(TAG, "Successfully loaded " + count + " actor spawn definitions from " + ASSET_PATH);
         } catch (Exception e) {
-            Log.e(TAG, "Error cargando archivo " + ASSET_PATH, e);
+            Log.e(TAG, "Error loading asset file " + ASSET_PATH, e);
         }
     }
 

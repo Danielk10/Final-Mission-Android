@@ -8,7 +8,7 @@ import android.graphics.RectF;
 import com.diamon.finalmission.engine.AssetLoader;
 
 /**
- * Entidad de proyectiles tanto del jugador como de enemigos y jefes.
+ * Projectile entity representing shots from Player, Satellites, Enemies, and Bosses.
  */
 public class Bullet {
 
@@ -17,8 +17,11 @@ public class Bullet {
         PLAYER_WIDE,
         PLAYER_LASER,
         SATELLITE,
+        SATELLITE_WIDE,
+        SATELLITE_LASER,
         ENEMY_NORMAL,
-        ENEMY_SALTADOR,
+        ENEMY_JUMPER,
+        ENEMY_SALTADOR, // Legacy alias for compatibility
         ENEMY_MISSILE,
         ENEMY_WALL_LASER,
         BOSS_PLASMA,
@@ -39,12 +42,12 @@ public class Bullet {
     public boolean alive = true;
     public float angle = 0f;
 
-    // Animación de proyectil
+    // Projectile animation & lifecycle
     private float animTimer = 0f;
     private int animFrame = 0;
     public float lifetime = 0f;
     public int missileHp = 1;
-    public int sphereHp = 2; // Resistencia para esferas de energía destructibles
+    public int sphereHp = 2; // Durability for destructible energy spheres
 
     public Bullet(float x, float y, float vx, float vy, Type type, boolean facingRight, float damage) {
         this.x = x;
@@ -87,6 +90,25 @@ public class Bullet {
         return b;
     }
 
+    public static Bullet createSatelliteWide(float x, float y, float angle) {
+        float speed = 320f;
+        float vx = (float) Math.cos(angle) * speed;
+        float vy = (float) Math.sin(angle) * speed;
+        Bullet b = new Bullet(x, y, vx, vy, Type.SATELLITE_WIDE, vx >= 0, 1.5f);
+        b.angle = angle;
+        return b;
+    }
+
+    public static Bullet createSatelliteLaser(float x, float y, float angle) {
+        float speed = 480f;
+        float vx = (float) Math.cos(angle) * speed;
+        float vy = (float) Math.sin(angle) * speed;
+        Bullet b = new Bullet(x, y, vx, vy, Type.SATELLITE_LASER, vx >= 0, 3.0f);
+        b.penetrating = true;
+        b.angle = angle;
+        return b;
+    }
+
     public static Bullet createEnemyNormal(float x, float y, float targetX, float targetY, float speed) {
         float dx = targetX - x;
         float dy = targetY - y;
@@ -106,8 +128,12 @@ public class Bullet {
         return new Bullet(x, y, vx, 0f, Type.ENEMY_WALL_LASER, !facingLeft, 1.2f);
     }
 
+    public static Bullet createEnemyJumper(float x, float y, float vx, float vy) {
+        return new Bullet(x, y, vx, vy, Type.ENEMY_JUMPER, vx >= 0, 1.0f);
+    }
+
     public static Bullet createEnemySaltador(float x, float y, float vx, float vy) {
-        return new Bullet(x, y, vx, vy, Type.ENEMY_SALTADOR, vx >= 0, 1.0f);
+        return createEnemyJumper(x, y, vx, vy);
     }
 
     public static Bullet createEnemyMissile(float x, float y, boolean facingRight) {
@@ -117,7 +143,7 @@ public class Bullet {
         return b;
     }
 
-    // FASE 1 JEFE: Láser dirigido de 3 vías
+    // BOSS PHASE 1: 3-way aimed laser
     public static Bullet createBossLaser(float x, float y, float angle, float speed) {
         float vx = (float) Math.cos(angle) * speed;
         float vy = (float) Math.sin(angle) * speed;
@@ -126,14 +152,14 @@ public class Bullet {
         return b;
     }
 
-    // FASE 2 JEFE: Esferas de energía destructibles
+    // BOSS PHASE 2: Destructible energy spheres
     public static Bullet createBossEnergySphere(float x, float y, float vx, float vy) {
         Bullet b = new Bullet(x, y, vx, vy, Type.BOSS_ENERGY_SPHERE, vx >= 0, 1.5f);
         b.sphereHp = 2;
         return b;
     }
 
-    // FASE 3 JEFE: Ráfagas rápidas de desesperación
+    // BOSS PHASE 3: Overload desperation barrage
     public static Bullet createBossBarrage(float x, float y, float angle, float speed) {
         float vx = (float) Math.cos(angle) * speed;
         float vy = (float) Math.sin(angle) * speed;
@@ -159,10 +185,10 @@ public class Bullet {
     }
 
     public void deflect() {
-        // Desvío por orbe defensivo
+        // Deflected by defensive orb
         this.vx = -Math.abs(vx) * 0.6f;
         this.vy = (float) ((Math.random() - 0.5) * 160f);
-        this.alive = false; // Se disipa al rebotar
+        this.alive = false; // Dissipates upon ricochet
     }
 
     public void update(float dt) {
@@ -170,12 +196,12 @@ public class Bullet {
         lifetime += dt;
         animTimer += dt;
 
-        // Comportamiento de misil
+        // Missile acceleration
         if (type == Type.ENEMY_MISSILE) {
             vx += (facingRight ? 100f : -100f) * dt;
         }
 
-        // Ondulación de esferas destructibles
+        // Destructible sphere vertical wave
         if (type == Type.BOSS_ENERGY_SPHERE) {
             y += (float) Math.sin(lifetime * 4.0) * 0.4f;
         }
@@ -183,13 +209,13 @@ public class Bullet {
         x += vx * dt;
         y += vy * dt;
 
-        // Ciclo de animación
+        // Animation frame cycling
         if (animTimer >= 0.06f) {
             animTimer = 0f;
             animFrame = (animFrame + 1) % 4;
         }
 
-        // Límite de vida útil fuera de pantalla
+        // Despawn bounds
         if (x < -80 || x > 600 || y < -60 || y > 300) {
             alive = false;
         }
@@ -214,6 +240,14 @@ public class Bullet {
             case SATELLITE:
                 bmp = loader.getBitmap("balaSatelite.png");
                 break;
+            case SATELLITE_WIDE:
+                int swFrame = (animFrame % 3) + 1;
+                bmp = loader.getBitmap("balaWD" + swFrame + ".png");
+                break;
+            case SATELLITE_LASER:
+                int slFrame = (animFrame % 3) + 1;
+                bmp = loader.getBitmap("balaLD" + slFrame + ".png");
+                break;
             case ENEMY_NORMAL:
             case BOSS_PLASMA:
             case BOSS_BARRAGE:
@@ -223,6 +257,7 @@ public class Bullet {
             case ENEMY_WALL_LASER:
                 bmp = loader.getBitmap(facingRight ? "balaParedD.png" : "balaParedI.png");
                 break;
+            case ENEMY_JUMPER:
             case ENEMY_SALTADOR:
             case BOSS_ENERGY_SPHERE:
                 int sFrame = (animFrame % 2) + 1;
@@ -233,7 +268,6 @@ public class Bullet {
                 bmp = loader.getBitmap((facingRight ? "misilD" : "misilH") + mFrame + ".png");
                 break;
             case BOSS_LASER:
-                // Rayo láser de jefe
                 int blFrame = (animFrame % 3) + 1;
                 bmp = loader.getBitmap("balaLI" + blFrame + ".png");
                 break;
@@ -246,7 +280,14 @@ public class Bullet {
         if (bmp != null) {
             float drawX = x - bmp.getWidth() / 2f;
             float drawY = y - bmp.getHeight() / 2f;
-            canvas.drawBitmap(bmp, drawX, drawY, paint);
+            if (type == Type.SATELLITE_WIDE || type == Type.SATELLITE_LASER) {
+                canvas.save();
+                canvas.rotate((float) Math.toDegrees(angle), x, y);
+                canvas.drawBitmap(bmp, drawX, drawY, paint);
+                canvas.restore();
+            } else {
+                canvas.drawBitmap(bmp, drawX, drawY, paint);
+            }
         }
     }
 
@@ -261,6 +302,10 @@ public class Bullet {
                 return new RectF(x - 12, y - 3, x + 12, y + 3);
             case SATELLITE:
                 return new RectF(x - 3, y - 3, x + 3, y + 3);
+            case SATELLITE_WIDE:
+                return new RectF(x - 5, y - 5, x + 5, y + 5);
+            case SATELLITE_LASER:
+                return new RectF(x - 8, y - 4, x + 8, y + 4);
             case ENEMY_WALL_LASER:
                 return new RectF(x - 8, y - 3, x + 8, y + 3);
             case ENEMY_MISSILE:
@@ -278,7 +323,8 @@ public class Bullet {
 
     public boolean isPlayerBullet() {
         return type == Type.PLAYER_NORMAL || type == Type.PLAYER_WIDE ||
-                type == Type.PLAYER_LASER || type == Type.SATELLITE;
+                type == Type.PLAYER_LASER || type == Type.SATELLITE ||
+                type == Type.SATELLITE_WIDE || type == Type.SATELLITE_LASER;
     }
 
     public boolean isEnemyBullet() {

@@ -24,33 +24,33 @@ import com.diamon.finalmission.world.Level;
 import java.util.Random;
 
 /**
- * Vista principal de alto rendimiento de Final Mission para Android.
- * - Modo Horizontal Landscape completo (Widescreen sin barras negras, adaptado al aspect ratio del móvil).
- * - Cinemática de prólogo NES auténtica (fondoIntroduccion3.png, introduccion.png, introduccion.wav,
- *   skyline en scroll, texto de invasión alienígena 2029 A.D., soldados despegando con jetpack y satélites).
- * - Menú principal con selección 1P Arnold / 2P Sigourney, Help / Controls (ayuda.png), Start Mission.
- * - Tarjeta de presentación de fase (STAGE 1..8 con comienzo1.wav).
- * - Pantalla de Continuar (continuar.png) con cuenta regresiva de 9 segundos y Game Over (finJuego.png, finDeJuego.wav).
- * - Pantalla de fin de fase con recuento de bonificación (finNivel.png).
- * - Giro ágil de orientación (flick horizontal) y satélites 360° táctiles sin tapar la nave.
+ * High-performance game view and render surface for Final Mission Android.
+ * - Full widescreen landscape mode (100% borderless display adapting to mobile aspect ratios).
+ * - Authentic NES prologue cinematic (fondoIntroduccion3.png, introduccion.png, introduccion.wav,
+ *   scrolling ruined skyline, cybernetic alien invasion 2029 A.D., Arnold & Sigourney launch sequence).
+ * - Main menu with 1P Arnold / 2P Sigourney character selection, Help / Controls (ayuda.png), Start Mission.
+ * - Stage presentation card (STAGE 1..8 with comienzo1.wav).
+ * - Continue screen (continuar.png) with authentic 9-second countdown and Game Over flow (finJuego.png, finDeJuego.wav).
+ * - Stage clear bonus calculation screen (finNivel.png).
+ * - Agile horizontal orientation flick and 360° satellite lock.
  */
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
     public static final int VIRTUAL_HEIGHT = 224;
-    public int virtualWidth = 398; // Ancho virtual adaptativo widescreen
+    public int virtualWidth = 398; // Adaptive widescreen virtual width
 
     private SurfaceHolder holder;
     private Thread renderThread;
     private volatile boolean isRunning = false;
 
-    // Lienzo virtual retro widescreen y búfer de volcado
+    // Virtual widescreen retro canvas and blit buffer
     private Bitmap virtualBitmap;
     private Canvas virtualCanvas;
     private Rect srcRect;
     private RectF dstRect;
     private Paint renderPaint;
 
-    // Subsistemas del motor
+    // Engine Subsystems
     private AssetLoader assetLoader;
     private AudioManager audioManager;
     private TouchController touchController;
@@ -58,21 +58,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private HUD hud;
     private GameState gameState = GameState.MENU;
 
-    // Selección de personaje y opciones de menú
+    // Character Selection and Menu Options
     private int selectedCharacter = 1; // 1 = Arnold, 2 = Sigourney
     private int menuOptionIndex = 0;   // 0 = 1P Arnold, 1 = 2P Sigourney, 2 = Help, 3 = Prologue
     private float menuTimer = 0f;
     private float menuIdleTimer = 0f;
     private float stateTransitionTimer = 0f;
 
-    // Temporizadores de pantallas
+    // Screen Timers
     private float prologueTimer = 0f;
     private float stageIntroTimer = 0f;
     private float continueCountdown = 9.99f;
     private int continueOption = 0; // 0 = CONTINUE, 1 = END
     private float gameOverTimer = 0f;
 
-    // Tipografías retro y pinceles
+    // Retro Typography and Paints
     private Paint retroTextPaint;
     private Paint retroShadowPaint;
     private Paint titleTextPaint;
@@ -80,7 +80,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private Paint cardBgPaint;
     private Paint cardBorderPaint;
 
-    // Campo de estrellas de fondo para pantallas panorámicas
+    // Starfield for widescreen backdrop margins
     private static final int STAR_COUNT = 45;
     private final float[] starX = new float[STAR_COUNT];
     private final float[] starY = new float[STAR_COUNT];
@@ -128,7 +128,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         retroShadowPaint.setAntiAlias(false);
 
         titleTextPaint = new Paint();
-        titleTextPaint.setColor(Color.rgb(252, 216, 168)); // Oro retro NES
+        titleTextPaint.setColor(Color.rgb(252, 216, 168)); // Authentic NES Gold
         titleTextPaint.setTextSize(12f);
         titleTextPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
         titleTextPaint.setAntiAlias(false);
@@ -148,7 +148,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         cardBorderPaint.setStyle(Paint.Style.STROKE);
         cardBorderPaint.setStrokeWidth(1.5f);
 
-        // Generar campo de estrellas retro
+        // Generate retro starfield
         Random rng = new Random(42);
         for (int i = 0; i < STAR_COUNT; i++) {
             starX[i] = rng.nextFloat() * 600f;
@@ -175,7 +175,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 break;
             case MENU:
                 menuIdleTimer = 0f;
-                audioManager.playMusic(AudioManager.BGM_MENU, true);
+                audioManager.stopMusic();
                 break;
             case HELP:
                 break;
@@ -207,7 +207,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 break;
             case VICTORY:
                 audioManager.stopMusic();
-                audioManager.playMusic(AudioManager.BGM_MENU, true);
+                audioManager.playMusic(AudioManager.BGM_INTRODUCCION, true);
                 break;
             case PAUSED:
                 audioManager.pauseMusic();
@@ -225,11 +225,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (width <= 0 || height <= 0) return;
 
-        // Modo horizontal widescreen completo sin barras negras (100% de la pantalla)
+        // Adaptive widescreen landscape mode without black bars (100% native fill)
         float aspect = (float) width / (float) height;
         virtualWidth = Math.max(256, Math.round(VIRTUAL_HEIGHT * aspect));
 
-        // Recrear búfer virtual retro adaptado al nuevo ancho panorámico
+        // Recreate virtual retro buffer matching display aspect ratio
         if (virtualBitmap != null && !virtualBitmap.isRecycled()) {
             virtualBitmap.recycle();
         }
@@ -280,7 +280,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     @Override
     public void run() {
         long lastTime = System.nanoTime();
-        final long targetFrameNs = 16_666_666L; // 60 FPS exactos
+        final long targetFrameNs = 16_666_666L; // 60 FPS target loop
 
         while (isRunning) {
             long now = System.nanoTime();
@@ -294,7 +294,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
             Canvas canvas = null;
             try {
-                canvas = holder.lockHardwareCanvas();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    canvas = holder.lockHardwareCanvas();
+                }
                 if (canvas == null) {
                     canvas = holder.lockCanvas();
                 }
@@ -335,7 +337,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
             case MENU:
                 menuIdleTimer += dt;
-                // Si pasa 12 segundos sin tocar la pantalla, se activa el prólogo cinemático automáticamente
+                // Automatically activate cinematic prologue after 12 seconds of idle menu
                 if (menuIdleTimer >= 12.0f) {
                     setGameState(GameState.PROLOGUE);
                 }
@@ -352,7 +354,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 break;
 
             case PLAYING:
-                // Giro ágil del jugador (flick horizontal o cambio táctil)
+                // Fast horizontal character flick
                 if (touchController.flickFacing != null) {
                     level.player.setFacing(touchController.flickFacing);
                     touchController.flickFacing = null;
@@ -361,12 +363,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 level.update(dt, touchController.isTouching, touchController.satelliteLock,
                         touchController.satelliteTargetAngle, audioManager);
 
-                // Fin de vidas -> Pantalla de Continuar auténtica NES
+                // Lives exhausted -> Authentic NES Continue Screen
                 if (!level.player.alive && level.player.lives <= 0) {
                     setGameState(GameState.CONTINUE);
                 }
 
-                // Fin de nivel si el jefe es destruido
+                // Stage clear condition: boss defeated and explosion sequence finished
                 if (level.boss != null && level.boss.isDefeated && level.boss.defeatTimer >= 2.8f) {
                     level.calculateStageClearBonus();
                     setGameState(GameState.STAGE_CLEAR);
@@ -450,11 +452,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * 1. STORY PROLOGUE / CINEMÁTICA NES AUTÉNTICA:
-     * - Utiliza fondoIntroduccion3.png (panorama 512x240), introduccion.png e introduccion.wav.
-     * - Desplaza la silueta de la ciudad destruida.
-     * - Relata la invasión alienígena cybernética de 2029 A.D.
-     * - Transición al despegue de Arnold y Sigourney con jetpack y satélites orbitales.
+     * 1. Story Prologue / Authentic NES Cinematic:
+     * - Uses fondoIntroduccion3.png (512x240 panorama), introduccion.png, and introduccion.wav.
+     * - Panning silhouette of the ruined city skyline.
+     * - Cybernetic alien invasion storyline set in 2029 A.D.
+     * - Transition to Arnold & Sigourney jetpack launch with orbital support satellites.
      */
     private void renderPrologueScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -463,7 +465,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         float panT = Math.min(1.0f, prologueTimer / 8.0f);
         float scrollX = panT * maxPan;
 
-        // Renderizado del panorama de la ciudad destruida (fondoIntroduccion3.png)
+        // Skyline panorama of ruined metropolis (fondoIntroduccion3.png)
         Bitmap skyline = assetLoader.getBitmap("fondoIntroduccion3.png");
         if (skyline != null) {
             Rect srcPan = new Rect((int) scrollX, 0, (int) Math.min(512f, scrollX + virtualWidth), 240);
@@ -473,19 +475,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
         drawTwinklingStars(virtualCanvas);
 
-        // Acto 1 (0.0s - 7.5s): El Ataque Alienígena
+        // Act 1 (0.0s - 7.5s): Authentic Japanese Final Mission Invasion Lore
         if (prologueTimer < 7.5f) {
             drawShadowBox(virtualCanvas, 16f, 168f, virtualWidth - 32f, 48f);
-            drawCenteredText(virtualCanvas, "A.D. 2029 -- EARTH UNDER MERCILESS SIEGE.", 180f, Color.rgb(255, 210, 140), 7.5f);
-            drawCenteredText(virtualCanvas, "A CYBERNETIC ALIEN INVASION STRUCK SUDDENLY.", 192f, Color.WHITE, 7.5f);
-            drawCenteredText(virtualCanvas, "HUMAN METROPOLISES BURNED TO SMOKING RUINS.", 204f, Color.WHITE, 7.5f);
+            drawCenteredText(virtualCanvas, "A.D. 2XXX -- PEACE WAS FORGOTTEN BY HUMANITY...", 180f, Color.rgb(255, 210, 140), 7.5f);
+            drawCenteredText(virtualCanvas, "A SUDDEN ALIEN INVASION STRUCK. LIGHTNING RAINED DOWN,", 192f, Color.WHITE, 7.5f);
+            drawCenteredText(virtualCanvas, "AND THE EARTH WAS MERCILESSLY ANNIHILATED TO RUINS.", 204f, Color.WHITE, 7.5f);
         }
-        // Acto 2 (7.5s - 13.5s): Movilización de Arnold & Sigourney y Despegue
+        // Act 2 (7.5s - 13.5s): Sortie of Sparky & Sergei Missionov
         else if (prologueTimer < 13.5f) {
             drawShadowBox(virtualCanvas, 16f, 12f, virtualWidth - 32f, 36f);
-            drawCenteredText(virtualCanvas, "SPECIAL CYBERNETIC ATTACK TEAM (S.C.A.T.)", 22f, Color.rgb(255, 210, 140), 7.5f);
-            drawCenteredText(virtualCanvas, "TWO ELITE CYBORG WARRIORS SORTIE FOR COUNTER-STRIKE:", 32f, Color.WHITE, 7.5f);
-            drawCenteredText(virtualCanvas, "ARNOLD & SIGOURNEY", 42f, Color.rgb(130, 220, 255), 8.5f);
+            drawCenteredText(virtualCanvas, "FINAL MISSION -- SEVERING THE ALIEN ASTRO PIPE", 22f, Color.rgb(255, 210, 140), 7.5f);
+            drawCenteredText(virtualCanvas, "TWO HEROIC WARRIORS LAUNCH A DESPERATE COUNTERATTACK:", 32f, Color.WHITE, 7.5f);
+            drawCenteredText(virtualCanvas, "SPARKY & SERGEI MISSIONOV", 42f, Color.rgb(130, 220, 255), 8.5f);
 
             float flightPhase = Math.max(0f, (prologueTimer - 8.5f) / 3.5f);
             float heroY = 135f - (flightPhase * 95f);
@@ -523,7 +525,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 virtualCanvas.drawBitmap(satBmp, sat2X - satBmp.getWidth() / 2f, sat2Y - satBmp.getHeight() / 2f, renderPaint);
             }
         }
-        // Acto 3 (13.5s - 19.5s): Emblema Final Mission y Comienzo de la Misión
+        // Act 3 (13.5s - 19.5s): Final Mission Title & Sortie Confirmation
         else {
             Bitmap introLogo = assetLoader.getBitmap("introduccion.png");
             if (introLogo != null) {
@@ -532,7 +534,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             }
 
             drawShadowBox(virtualCanvas, (virtualWidth - 220f) / 2f, 140f, 220f, 65f);
-            drawCenteredText(virtualCanvas, "OPERATION: PENETRATE ALIEN DEFENSE LINE", 154f, Color.rgb(255, 215, 120), 8f);
+            drawCenteredText(virtualCanvas, "FINAL MISSION: PENETRATE ALIEN FORTRESS LINE", 154f, Color.rgb(255, 215, 120), 8f);
             drawCenteredText(virtualCanvas, "AND DESTROY THE CYBERNETIC MOTHERSHIP!", 166f, Color.WHITE, 7.5f);
             drawCenteredText(virtualCanvas, "THE FATE OF HUMANITY RESTS IN YOUR HANDS.", 178f, Color.rgb(180, 220, 255), 7f);
 
@@ -545,11 +547,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * 2. TITLE & MAIN MENU:
-     * - Utiliza menu1.png y menu2.png alternando brillo del logotipo.
-     * - Opciones: 1P Arnold, 2P Sigourney, Help / Controls (ayuda.png), Story Prologue.
-     * - Cursor animado selector1.png / selector2.png.
-     * - Vista previa de sprites de Arnold y Sigourney.
+     * 2. Title & Main Menu:
+     * - Uses menu1.png and menu2.png alternating title shine.
+     * - Options: 1P Arnold, 2P Sigourney, Help / Controls (ayuda.png), Story Prologue.
+     * - Animated selector cursor (selector1.png / selector2.png).
      */
     private void renderMenuScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -563,10 +564,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             virtualCanvas.drawBitmap(menuBmp, menuOffsetLeft, -8f, renderPaint);
         }
 
-        // Decoración retro en márgenes widescreen
+        // Retro sidebar decorations for widescreen displays
         if (menuOffsetLeft > 10f) {
-            drawShadowText(virtualCanvas, "S.C.A.T. 2029", 10f, 20f, Color.rgb(96, 160, 255), 7f);
-            drawShadowText(virtualCanvas, "CYBER ASSAULT", 10f, 32f, Color.LTGRAY, 6.5f);
+            drawShadowText(virtualCanvas, "FINAL MISSION", 10f, 20f, Color.rgb(96, 160, 255), 7f);
+            drawShadowText(virtualCanvas, "NATSUME 1990", 10f, 32f, Color.LTGRAY, 6.5f);
 
             drawShadowText(virtualCanvas, "NATSUME 1990", virtualWidth - 75f, 20f, Color.rgb(255, 200, 120), 7f);
             drawShadowText(virtualCanvas, "8 STAGES WIDE", virtualWidth - 75f, 32f, Color.LTGRAY, 6.5f);
@@ -576,10 +577,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             drawShadowText(virtualCanvas, "TOUCH TO START MISSION", menuOffsetLeft + 68f, 144f, Color.rgb(255, 240, 160), 7.5f);
         }
 
-        // Identificadores y distintivos de Arnold (1P) y Sigourney (2P)
-        drawShadowText(virtualCanvas, "(ARNOLD)", menuOffsetLeft + 154f, 168f,
+        // Sparky (1P) and Sergei Missionov (2P) selector options
+        drawShadowText(virtualCanvas, "(SPARKY)", menuOffsetLeft + 154f, 168f,
                 (selectedCharacter == 1) ? Color.rgb(255, 220, 120) : Color.LTGRAY, 7f);
-        drawShadowText(virtualCanvas, "(SIGOURNEY)", menuOffsetLeft + 162f, 184f,
+        drawShadowText(virtualCanvas, "(SERGEI)", menuOffsetLeft + 162f, 184f,
                 (selectedCharacter == 2) ? Color.rgb(130, 220, 255) : Color.LTGRAY, 7f);
 
         drawShadowText(virtualCanvas, "HELP / CONTROLS", menuOffsetLeft + 90f, 196f,
@@ -587,7 +588,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         drawShadowText(virtualCanvas, "STORY PROLOGUE", menuOffsetLeft + 90f, 206f,
                 (menuOptionIndex == 3) ? Color.rgb(255, 240, 160) : Color.rgb(180, 210, 240), 7f);
 
-        // Previsualización animada de los héroes
+        // Animated character previews
         int hero1Frame = (int) ((menuTimer * 6f) % 6) + 1;
         Bitmap aMini = assetLoader.getBitmap("jugador1D" + hero1Frame + ".png");
         if (aMini != null) {
@@ -600,7 +601,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             virtualCanvas.drawBitmap(sMini, menuOffsetLeft + 218f, 170f, renderPaint);
         }
 
-        // Cursor animado NES
+        // Animated NES selector arrow
         int selFrame = (menuTimer % 0.3f < 0.15f) ? 1 : 2;
         Bitmap selector = assetLoader.getBitmap("selector" + selFrame + ".png");
         if (selector != null) {
@@ -616,7 +617,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * Pantalla de Ayuda / Controles (ayuda.png).
+     * Help / Controls Screen (ayuda.png).
      */
     private void renderHelpScreen() {
         virtualCanvas.drawColor(Color.rgb(12, 16, 24));
@@ -638,9 +639,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * 3. STAGE INTRO CARD:
-     * - Muestra "STAGE X" banner.
-     * - Reproduce comienzo1.wav.
+     * 3. Stage Intro Card:
+     * - Displays "STAGE X" banner.
+     * - Plays comienzo1.wav.
      */
     private void renderStageIntroCard() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -677,7 +678,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * Pantalla de Fin de Fase (finNivel.png y recuento de puntos).
+     * Stage Clear Screen (finNivel.png and bonus tally).
      */
     private void renderStageClearScreen() {
         virtualCanvas.drawColor(0xAA000000);
@@ -710,9 +711,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * 4. CONTINUE SCREEN (continuar.png):
-     * - Cuenta regresiva de 9 segundos.
-     * - Opciones: CONTINUE o END.
+     * 4. Continue Screen (continuar.png):
+     * - 9-second countdown.
+     * - Options: CONTINUE or END.
      */
     private void renderContinueScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -749,7 +750,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * Pantalla de Fin de Juego (finJuego.png, finDeJuego.wav).
+     * Game Over Screen (finJuego.png, finDeJuego.wav).
      */
     private void renderGameOverScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -771,7 +772,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     /**
-     * Pantalla de Victoria de Fin de Misión (finNivel.png).
+     * Mission Victory Screen (finNivel.png).
      */
     private void renderVictoryScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -786,7 +787,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         drawCenteredText(virtualCanvas, "ALL 8 MISSIONS ACCOMPLISHED!", 85f, Color.rgb(255, 220, 120), 10f);
         drawCenteredText(virtualCanvas, "THE EARTH IS SAVED!", 105f, Color.WHITE, 8.5f);
         drawCenteredText(virtualCanvas, String.format("FINAL HIGH SCORE: %06d", level.score), 130f, Color.rgb(180, 220, 255), 8.5f);
-        drawCenteredText(virtualCanvas, "CONGRATULATIONS ARNOLD & SIGOURNEY", 155f, Color.rgb(255, 200, 130), 8f);
+        drawCenteredText(virtualCanvas, "CONGRATULATIONS SPARKY & SERGEI MISSIONOV", 155f, Color.rgb(255, 200, 130), 8f);
 
         if (menuTimer % 0.6f < 0.35f) {
             drawCenteredText(virtualCanvas, "TOUCH TO RETURN TO MENU", 190f, Color.YELLOW, 8f);
@@ -859,6 +860,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         int actionIndex = event.getActionIndex();
@@ -870,6 +876,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             if (action == MotionEvent.ACTION_DOWN) {
                 switch (gameState) {
                     case PROLOGUE:
+                        audioManager.playSound(AudioManager.SFX_MENU);
                         setGameState(GameState.MENU);
                         return true;
 
@@ -878,30 +885,36 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                         if (touchVirtualY >= 150f && touchVirtualY < 166f) {
                             selectedCharacter = 1;
                             menuOptionIndex = 0;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             level.initLevel(selectedCharacter);
                             setGameState(GameState.STAGE_INTRO);
                             return true;
                         } else if (touchVirtualY >= 166f && touchVirtualY < 182f) {
                             selectedCharacter = 2;
                             menuOptionIndex = 1;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             level.initLevel(selectedCharacter);
                             setGameState(GameState.STAGE_INTRO);
                             return true;
                         } else if (touchVirtualY >= 182f && touchVirtualY < 198f) {
                             menuOptionIndex = 2;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             setGameState(GameState.HELP);
                             return true;
                         } else if (touchVirtualY >= 198f && touchVirtualY < 216f) {
                             menuOptionIndex = 3;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             setGameState(GameState.PROLOGUE);
                             return true;
                         } else {
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             level.initLevel(selectedCharacter);
                             setGameState(GameState.STAGE_INTRO);
                             return true;
                         }
 
                     case HELP:
+                        audioManager.playSound(AudioManager.SFX_MENU);
                         setGameState(GameState.MENU);
                         return true;
 
@@ -920,26 +933,31 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                     case CONTINUE:
                         if (touchVirtualY >= 136f && touchVirtualY < 152f) {
                             continueOption = 0;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             level.restartAfterContinue();
                             setGameState(GameState.STAGE_INTRO);
                             return true;
                         } else if (touchVirtualY >= 152f && touchVirtualY < 172f) {
                             continueOption = 1;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             setGameState(GameState.GAME_OVER);
                             return true;
                         } else {
                             continueOption = (continueOption == 0) ? 1 : 0;
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             return true;
                         }
 
                     case GAME_OVER:
                         if (gameOverTimer > 1.2f) {
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             setGameState(GameState.MENU);
                         }
                         return true;
 
                     case VICTORY:
                         if (stateTransitionTimer > 1.0f) {
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             setGameState(GameState.MENU);
                         }
                         return true;
@@ -952,7 +970,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             return true;
         }
 
-        // Gestión táctil durante el juego activo
+        // Active gameplay touch management
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN: {

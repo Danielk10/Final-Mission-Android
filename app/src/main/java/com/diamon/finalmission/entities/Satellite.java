@@ -7,9 +7,9 @@ import android.graphics.Paint;
 import com.diamon.finalmission.engine.AssetLoader;
 
 /**
- * Pod de satélite orbital auténtico de Final Mission NES.
- * Orbita libremente alrededor del jugador o se bloquea y orienta en 360 grados
- * mediante el dedo libre secundario.
+ * Authentic orbital satellite pod entity from Final Mission NES:
+ * Orbits continuously 360-degrees around the player character, or locks its aim
+ * angle into a fixed direction via touch controls / on-screen lock toggle.
  */
 public class Satellite {
 
@@ -22,6 +22,7 @@ public class Satellite {
 
     public boolean isLocked = false;
     public float aimAngle = 0f;
+    public Float lockedAngle = null;
 
     private float animTimer = 0f;
     private int animFrame = 0;
@@ -41,33 +42,54 @@ public class Satellite {
 
         this.isLocked = lockActive;
 
-        if (lockActive && targetAngle != null) {
-            this.aimAngle = targetAngle;
-            // Cuando están bloqueados se colocan en los flancos perpendiculares al vector de disparo
-            float flankOffset = (podIndex == 0 ? 1f : -1f) * (float) (Math.PI / 2.0);
-            float posAngle = aimAngle + flankOffset;
-            this.x = playerCenterX + (float) Math.cos(posAngle) * orbitRadius;
-            this.y = playerCenterY + (float) Math.sin(posAngle) * orbitRadius;
+        if (lockActive) {
+            if (targetAngle != null) {
+                this.lockedAngle = targetAngle;
+                this.aimAngle = targetAngle;
+                float flankOffset = (podIndex == 0 ? 1f : -1f) * (float) (Math.PI / 2.0);
+                float posAngle = aimAngle + flankOffset;
+                this.x = playerCenterX + (float) Math.cos(posAngle) * orbitRadius;
+                this.y = playerCenterY + (float) Math.sin(posAngle) * orbitRadius;
+            } else {
+                // Statically locked in current orbital position
+                if (lockedAngle == null) {
+                    lockedAngle = (float) (orbitAngle + (podIndex * Math.PI));
+                }
+                this.aimAngle = lockedAngle;
+                this.x = playerCenterX + (float) Math.cos(lockedAngle) * orbitRadius;
+                this.y = playerCenterY + (float) Math.sin(lockedAngle) * orbitRadius;
+            }
         } else {
-            // Órbita fluida continua
+            // Unlocked: clear lock memory and orbit fluidly 360 degrees
+            this.lockedAngle = null;
             orbitAngle += orbitSpeed * dt;
-            this.aimAngle = orbitAngle;
             float currentAngle = (float) (orbitAngle + (podIndex * Math.PI));
+            this.aimAngle = currentAngle;
             this.x = playerCenterX + (float) Math.cos(currentAngle) * orbitRadius;
             this.y = playerCenterY + (float) Math.sin(currentAngle) * orbitRadius;
         }
     }
 
     public Bullet fire() {
-        return Bullet.createSatellite(x, y, aimAngle);
+        return fire(WeaponType.NORMAL);
+    }
+
+    public Bullet fire(WeaponType weaponType) {
+        if (weaponType == WeaponType.WIDE) {
+            return Bullet.createSatelliteWide(x, y, aimAngle);
+        } else if (weaponType == WeaponType.LASER) {
+            return Bullet.createSatelliteLaser(x, y, aimAngle);
+        } else {
+            return Bullet.createSatellite(x, y, aimAngle);
+        }
     }
 
     public void render(Canvas canvas, AssetLoader loader, Paint paint) {
-        // Normalizar ángulo entre -PI y PI
+        // Normalize angle to -PI..PI
         double normAngle = Math.atan2(Math.sin(aimAngle), Math.cos(aimAngle));
         double deg = Math.toDegrees(normAngle);
 
-        int frame = animFrame + 1; // 1 o 2
+        int frame = animFrame + 1; // 1 or 2
         String spriteName = "sateliteHD" + frame + ".png";
         boolean flipY = false;
 

@@ -9,26 +9,27 @@ import com.diamon.finalmission.engine.AssetLoader;
 import com.diamon.finalmission.engine.AudioManager;
 
 /**
- * Sistema de Potenciadores y Cajas de Final Mission NES:
- * - CAJA (Canister): Flota suavemente por la pantalla con animación cajaPoder1..4.png.
- *   Al ser destruida por disparos, se rompe y libera una cápsula de poder auténtica.
- * - PODER (Cápsula):
- *   * 'W' (poderW.png): Wide Spread Shot (disparo amplio en abanico)
- *   * 'L' (poderL.png): Laser Beam (rayo láser penetrante)
- *   * 'S' (poderS.png): Speed Up (acelerador de velocidad)
- *   * 'B' (poderB.png): Life Energy Recovery (recuperación de salud - estrictamente SIN BOMBAS)
+ * Power-Up and Item Box system for Final Mission NES:
+ * - ITEM_BOX (Canister): Floats smoothly across screen with 4-frame animation (cajaPoder1..4.png).
+ *   Upon taking bullet hits, cracks open and releases a power-up capsule.
+ * - CAPSULE (PowerUpCapsule):
+ *   * 'W' (poderW.png): Wide Spread Shot (3-way spread wave)
+ *   * 'L' (poderL.png): Laser Beam (piercing laser)
+ *   * 'S' (poderS.png): Speed Up (propulsion speed boost)
+ *   * 'B' (poderB.png): Life Energy Recovery (heals health segments - strictly NO BOMBS)
  *
- * Física de oscilación y desplazamiento auténtica portada de com.diamon.actor.Poder.
+ * Authentic oscillation physics ported from the original engine.
  */
 public class PowerUp {
 
     public enum Type {
-        CAJA,          // Contenedor flotante (cajaPoder1..4.png)
-        POD_CONTAINER, // Alias para compatibilidad
+        ITEM_BOX,      // Floating canister container (cajaPoder1..4.png)
+        CAJA,          // Legacy alias
+        POD_CONTAINER, // Legacy alias
         WIDE,          // 'W'
         LASER,         // 'L'
         SPEED,         // 'S'
-        LIFE           // 'B' (Recuperación de vida - sin bombas)
+        LIFE           // 'B' (Life energy recovery - authentic NES)
     }
 
     public float x;
@@ -40,16 +41,16 @@ public class PowerUp {
     public Type dropType = Type.WIDE;
     public boolean alive = true;
 
-    // Resistencia del contenedor Caja
+    // Item box durability
     public int containerHp = 2;
     public float hitFlashTimer = 0f;
 
-    // Animación y oscilación
+    // Animation & floating bobbing
     private float animTimer = 0f;
     private int animFrame = 0;
     private float floatTimer = 0f;
 
-    // Ciclo de desplazamiento auténtico de com.diamon.actor.Poder (150 ciclos)
+    // Movement impulse cycle ported from the authentic engine (150 frames / ~2.5s)
     private float cycleTimer = 0f;
     private boolean impulseActive = false;
     private float impulseDuration = 0f;
@@ -69,13 +70,13 @@ public class PowerUp {
             this.vx = -18f;
             this.containerHp = 2;
         } else {
-            // Velocidad base auténtica (~16 px/s a resolución retro)
+            // Authentic base drift speed (~16 px/sec at retro resolution)
             this.vx = -16f;
         }
     }
 
     public boolean isContainer() {
-        return type == Type.CAJA || type == Type.POD_CONTAINER;
+        return type == Type.ITEM_BOX || type == Type.CAJA || type == Type.POD_CONTAINER;
     }
 
     public static Type chooseRandomDrop() {
@@ -97,18 +98,17 @@ public class PowerUp {
         }
 
         if (isContainer()) {
-            // 1. Contenedor Caja: animación de 4 cuadros (cajaPoder1..4.png)
+            // 1. Item box canister: 4-frame rotation animation
             if (animTimer >= 0.12f) {
                 animTimer = 0f;
                 animFrame = (animFrame + 1) % 4;
             }
 
-            // Movimiento suave y flotación oscilatoria vertical
+            // Smooth horizontal drift with gentle vertical wave bobbing
             x += vx * dt;
             y = baseY + (float) Math.sin(floatTimer * 2.4f) * 6f;
         } else {
-            // 2. Cápsula Poder: física auténtica de com.diamon.actor.Poder
-            // Cada ~2.5 segundos (150 ciclos a 60 FPS), activa un desplazamiento impulsivo
+            // 2. Power-up capsule: periodic surge impulse
             cycleTimer += dt;
             if (cycleTimer >= 2.5f) {
                 cycleTimer = 0f;
@@ -119,18 +119,18 @@ public class PowerUp {
             float currentVx = vx;
             if (impulseActive) {
                 impulseDuration -= dt;
-                currentVx -= 28f; // Impulso extra de velocidad
+                currentVx -= 28f; // Extra propulsion burst
                 if (impulseDuration <= 0f) {
                     impulseActive = false;
                 }
             }
 
             x += currentVx * dt;
-            // Suave oscilación sinusoidal en el aire
+            // Gentle sinusoidal hovering in midair
             y = baseY + (float) Math.sin(floatTimer * 3.2f) * 5f;
         }
 
-        // Límite fuera de pantalla izquierda
+        // Despawn offscreen left
         if (x < -40f) {
             alive = false;
         }
@@ -158,8 +158,9 @@ public class PowerUp {
                 player.increaseSpeed();
                 break;
             case LIFE:
-                // 'B': Recuperación de energía vital (estrictamente SIN BOMBAS)
-                player.heal(2);
+                // 'B': Authentic health energy recovery (strictly NO BOMBS in Japanese release)
+                // Restores 1 life bar / HP block (max 3 HP in Japanese Final Mission)
+                player.heal(1);
                 if (player.health >= Player.MAX_HEALTH) {
                     player.addSatellite();
                 }
@@ -194,7 +195,6 @@ public class PowerUp {
                     bmp = loader.getBitmap("poderS.png");
                     break;
                 case LIFE:
-                    // Ítem auténtico 'B' (poderB.png)
                     bmp = loader.getBitmap("poderB.png");
                     break;
                 default:

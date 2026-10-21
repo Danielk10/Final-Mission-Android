@@ -12,10 +12,10 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Enemigo Saltador de Final Mission NES:
- * Androide ágil que da grandes brincos parabólicos por las plataformas y dispara hacia abajo en el aire.
+ * Jumper Mech enemy from Final Mission NES:
+ * Agile bipedal combat android that performs high parabolic leaps between platforms and fires downward at player.
  */
-public class Saltador extends Enemy {
+public class JumperMech extends Enemy {
 
     private final float groundY;
     private float vy = 0f;
@@ -27,7 +27,7 @@ public class Saltador extends Enemy {
     private float animTimer = 0f;
     private int animFrame = 1;
 
-    public Saltador(float x, float y) {
+    public JumperMech(float x, float y) {
         super(x, y, 24f, 29f, 4f, 400);
         this.groundY = y;
     }
@@ -40,7 +40,7 @@ public class Saltador extends Enemy {
             hitFlashTimer -= dt;
         }
 
-        // Scroll horizontal
+        // Horizontal scroll
         x -= scrollSpeed * dt;
 
         stateTimer += dt;
@@ -51,30 +51,30 @@ public class Saltador extends Enemy {
             vy = 0;
             animFrame = (animTimer % 0.3f < 0.15f) ? 1 : 2;
 
-            // Preparar y ejecutar salto hacia el jugador
+            // Prepare and initiate jump towards player
             if (stateTimer >= 1.2f) {
                 stateTimer = 0f;
                 isGrounded = false;
                 hasShotInAir = false;
-                vy = -160f; // Impulso vertical hacia arriba
+                vy = -160f; // Vertical jump impulse
                 vx = (player.x < x) ? -55f : 35f;
             }
         } else {
-            // En el aire
-            vy += 280f * dt; // Gravedad
+            // Airborne physics
+            vy += 280f * dt; // Gravity
             y += vy * dt;
             x += vx * dt;
             animFrame = (vy < 0) ? 3 : 4;
 
-            // Disparar en el punto álgido del salto
+            // Fire downward projectile at peak of jump arc
             if (!hasShotInAir && vy >= -30f && vy <= 30f) {
                 hasShotInAir = true;
-                if (x > 0 && x < 250) {
-                    enemyBullets.add(Bullet.createEnemySaltador(x + width / 2f, y + height, 0f, 130f));
+                if (x > -10 && x < 450) {
+                    enemyBullets.add(Bullet.createEnemyJumper(x + width / 2f, y + height, 0f, 130f));
                 }
             }
 
-            // Tocar suelo
+            // Land on ground
             if (y >= groundY) {
                 y = groundY;
                 isGrounded = true;

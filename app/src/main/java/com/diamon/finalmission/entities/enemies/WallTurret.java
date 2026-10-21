@@ -13,13 +13,13 @@ import com.diamon.finalmission.entities.Player;
 import java.util.List;
 
 /**
- * Torretas mecánicas de pared destructibles (MaquinaPared) de Final Mission:
- * - Emplea maquinaParedI1/I2 (lado izquierdo) y maquinaParedD1/D2 (lado derecho).
- * - Se anclan a los muros o estructuras de la fortaleza.
- * - Abren su compuerta para disparar proyectiles láser hacia el jugador.
- * - Son completamente destruibles de forma independiente.
+ * Destructible wall turret mechanism (WallTurret) from Final Mission NES:
+ * - Uses maquinaParedI1/I2 (left side) and maquinaParedD1/D2 (right side).
+ * - Anchors onto level walls or the biomechanical boss fortress hull.
+ * - Opens its hatch to aim and fire high-speed laser beams at the player.
+ * - Fully destructible independent entity.
  */
-public class MaquinaPared extends Enemy {
+public class WallTurret extends Enemy {
 
     public static final float TURRET_HP = 14f;
 
@@ -32,17 +32,17 @@ public class MaquinaPared extends Enemy {
 
     public float vy = 0f;
 
-    public MaquinaPared(float x, float y, boolean facingLeft) {
+    public WallTurret(float x, float y, boolean facingLeft) {
         super(x, y, 16f, 20f, TURRET_HP, 800);
         this.facingLeft = facingLeft;
         this.fireTimer = 0.8f + (float) (Math.random() * 1.0);
     }
 
-    public MaquinaPared(float x, float y, Side side) {
+    public WallTurret(float x, float y, Side side) {
         this(x, y, side == Side.LEFT);
     }
 
-    public MaquinaPared(float x, float y, Side side, float vy) {
+    public WallTurret(float x, float y, Side side, float vy) {
         this(x, y, side);
         this.vy = vy;
     }
@@ -60,14 +60,14 @@ public class MaquinaPared extends Enemy {
 
         fireTimer -= dt;
 
-        // Abrir compuerta 0.35s antes de disparar
+        // Open hatch 0.35s prior to firing
         if (fireTimer <= 0.35f && fireTimer > 0f) {
             isOpen = true;
         } else if (fireTimer > 0.35f && fireTimer < 1.8f) {
             isOpen = false;
         }
 
-        // Momento del disparo
+        // Fire laser beam
         if (fireTimer <= 0f) {
             fireTimer = 2.0f + (float) (Math.random() * 0.8);
             isOpen = true;

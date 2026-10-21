@@ -1,7 +1,6 @@
 package com.diamon.finalmission.entities;
 
 import android.graphics.Canvas;
-import android.graphics.ColorFilter;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
@@ -12,7 +11,7 @@ import com.diamon.finalmission.engine.AssetLoader;
 import java.util.List;
 
 /**
- * Clase base para todos los enemigos de Final Mission NES.
+ * Base abstract class for all enemy entities in Final Mission NES.
  */
 public abstract class Enemy {
 
@@ -25,12 +24,12 @@ public abstract class Enemy {
     public int scoreValue;
     public boolean alive = true;
 
-    // Efecto de parpadeo al recibir impacto
+    // Hit flash effect when taking damage
     public float hitFlashTimer = 0f;
     private static final Paint HIT_PAINT = new Paint();
 
     static {
-        // Matriz de color para destello blanco brillante al recibir daño
+        // High-contrast white flash upon taking projectile damage
         ColorMatrix cm = new ColorMatrix(new float[]{
                 2f, 0f, 0f, 0f, 120f,
                 0f, 2f, 0f, 0f, 120f,
@@ -76,6 +75,6 @@ public abstract class Enemy {
     }
 
     public boolean isOffscreen() {
-        return x < -width - 20 || x > 300 || y < -height - 20 || y > 250;
+        return x < -width - 50 || x > 550 || y < -height - 50 || y > 320;
     }
 }
