@@ -1,0 +1,7 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+}
+
+// Redirigir la carpeta build del proyecto raíz a /tmp para proteger el disco de Cloud Shell
+layout.buildDirectory.set(file("/tmp/finalmission_build/root-build"))
