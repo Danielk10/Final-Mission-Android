@@ -27,6 +27,8 @@ public class Player {
     public float height = 29f;
 
     public boolean facingRight = true;
+    public int characterId = 1; // 1 = Arnold, 2 = Sigourney
+    public float screenWidth = 256f;
     public int health = MAX_HEALTH;
     public int lives = STARTING_LIVES;
     public boolean alive = true;
@@ -103,8 +105,8 @@ public class Player {
             visible = true;
         }
 
-        // Límites en pantalla retro (256x224)
-        x = Math.max(2f, Math.min(256f - width - 2f, x));
+        // Límites en pantalla horizontal widescreen retro
+        x = Math.max(2f, Math.min(screenWidth - width - 2f, x));
         y = Math.max(16f, Math.min(224f - height - 4f, y));
 
         // Actualizar satélites
@@ -192,6 +194,10 @@ public class Player {
         return new RectF(x + 3f, y + 4f, x + width - 3f, y + height - 3f);
     }
 
+    public String getCharacterName() {
+        return characterId == 2 ? "SIGOURNEY" : "ARNOLD";
+    }
+
     public void render(Canvas canvas, AssetLoader loader, Paint paint) {
         if (!alive || !visible) return;
 
@@ -200,15 +206,29 @@ public class Player {
             sat.render(canvas, loader, paint);
         }
 
-        // Renderizar sprite de Arnold con animación de propulsión de jetpack
-        int frameIdx = (animFrame % 6) + 1;
-        String spriteName = "jugador1D" + frameIdx + ".png";
+        // Renderizar sprite de Arnold (1P) o Sigourney (2P) con animación de propulsión de jetpack
+        String spriteName;
+        boolean needsManualFlip = false;
+        if (characterId == 2) {
+            if (facingRight) {
+                int frameIdx = (animFrame % 4) + 1;
+                spriteName = "jugador2D" + frameIdx + ".png";
+            } else {
+                spriteName = "jugador2I1.png";
+            }
+        } else {
+            if (facingRight) {
+                int frameIdx = (animFrame % 6) + 1;
+                spriteName = "jugador1D" + frameIdx + ".png";
+            } else {
+                int frameIdx = (animFrame % 3) + 1;
+                spriteName = "jugador1I" + frameIdx + ".png";
+            }
+        }
+
         Bitmap bmp = loader.getBitmap(spriteName);
 
         if (bmp != null) {
-            if (!facingRight) {
-                bmp = loader.getFlippedBitmap(bmp, true, false);
-            }
             float drawX = x + (width - bmp.getWidth()) / 2f;
             float drawY = y + (height - bmp.getHeight()) / 2f;
             canvas.drawBitmap(bmp, drawX, drawY, paint);

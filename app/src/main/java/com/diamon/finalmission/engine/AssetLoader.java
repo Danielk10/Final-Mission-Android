@@ -54,7 +54,8 @@ public class AssetLoader {
         // Fondos y pantallas de menú/UI permanecen a resolución nativa
         if (name.startsWith("fondo") || name.startsWith("menu") || name.startsWith("barra")
                 || name.startsWith("fin") || name.startsWith("intro") || name.equals("nivel1.png")
-                || name.equals("ayuda.png") || name.equals("creditos.png") || name.equals("precentacion.png")) {
+                || name.equals("ayuda.png") || name.equals("creditos.png") || name.equals("precentacion.png")
+                || name.startsWith("continuar")) {
             return raw;
         }
 

@@ -24,6 +24,10 @@ public class TouchController {
     public float deltaYTactil = 0f;
     public boolean touchInitialized = false;
 
+    public float primaryStartX = 0f;
+    public float primaryStartY = 0f;
+    public float primaryTouchTime = 0f;
+
     public float primaryX = 0f;
     public float primaryY = 0f;
     public float secondaryX = 0f;
@@ -55,6 +59,9 @@ public class TouchController {
         deltaXTactil = 0f;
         deltaYTactil = 0f;
         touchInitialized = false;
+        primaryStartX = 0f;
+        primaryStartY = 0f;
+        primaryTouchTime = 0f;
         primaryX = 0f;
         primaryY = 0f;
         secondaryX = 0f;
@@ -73,6 +80,9 @@ public class TouchController {
     }
 
     public void update(float dt) {
+        if (primaryId != -1) {
+            primaryTouchTime += dt;
+        }
         if (secondaryId != -1) {
             secondaryTouchTime += dt;
         }
@@ -84,6 +94,9 @@ public class TouchController {
             primaryId = pointerId;
             primaryX = x;
             primaryY = y;
+            primaryStartX = x;
+            primaryStartY = y;
+            primaryTouchTime = 0f;
 
             deltaXTactil = x - playerX;
             deltaYTactil = y - playerY;
@@ -125,6 +138,11 @@ public class TouchController {
             float dy = y - secondaryStartY;
             float distSq = dx * dx + dy * dy;
 
+            // Giro rápido por flick horizontal en plena trayectoria
+            if (!secondaryHasDragged && Math.abs(dx) >= 20f && Math.abs(dx) >= Math.abs(dy) * 1.4f && secondaryTouchTime < 0.35f) {
+                flickFacing = dx > 0f;
+            }
+
             // Control y apuntado de satélites en 360 grados
             if (distSq > 100f) { // umbral de 10 píxeles
                 secondaryHasDragged = true;
@@ -148,11 +166,21 @@ public class TouchController {
 
     public void onTouchUp(int pointerId, float x, float y, float playerX, float playerY) {
         if (primaryId == pointerId) {
+            float pDx = x - primaryStartX;
+            float pDy = y - primaryStartY;
+            if (primaryTouchTime < 0.35f && Math.abs(pDx) >= 20f && Math.abs(pDx) >= Math.abs(pDy) * 1.3f) {
+                // Flick rápido del dedo primario -> cambiar orientación
+                flickFacing = pDx > 0f;
+            }
+
             if (secondaryId != -1) {
                 // Smooth handoff: el segundo dedo asume el movimiento
                 primaryId = secondaryId;
                 primaryX = secondaryX;
                 primaryY = secondaryY;
+                primaryStartX = secondaryX;
+                primaryStartY = secondaryY;
+                primaryTouchTime = 0f;
                 deltaXTactil = primaryX - playerX;
                 deltaYTactil = primaryY - playerY;
                 touchInitialized = true;
@@ -173,7 +201,7 @@ public class TouchController {
             float touchTime = secondaryTouchTime;
 
             if (touchTime < 0.40f) {
-                if (Math.abs(totalDx) >= 25f && Math.abs(totalDx) >= Math.abs(totalDy) * 1.1f) {
+                if (Math.abs(totalDx) >= 18f && Math.abs(totalDx) >= Math.abs(totalDy) * 1.1f) {
                     // Latigazo horizontal rápido (Flick) -> Voltear personaje
                     flickFacing = totalDx > 0f;
                 } else if (totalDistSq < 400f) {
