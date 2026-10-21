@@ -70,6 +70,7 @@ public class TouchController {
 
     public TouchController() {
         reset();
+        updateLockButtonBounds(400f, 224f);
     }
 
     public void updateLockButtonBounds(float virtualWidth, float virtualHeight) {
@@ -78,8 +79,10 @@ public class TouchController {
         float btnH = 26f;
         float marginX = 8f;
         float marginY = 8f;
-        lockButtonBounds.set(virtualWidth - btnW - marginX, virtualHeight - btnH - marginY,
-                virtualWidth - marginX, virtualHeight - marginY);
+        lockButtonBounds.left = virtualWidth - btnW - marginX;
+        lockButtonBounds.top = virtualHeight - btnH - marginY;
+        lockButtonBounds.right = virtualWidth - marginX;
+        lockButtonBounds.bottom = virtualHeight - marginY;
     }
 
     public boolean isTouchOnLockButton(float x, float y) {
@@ -114,6 +117,23 @@ public class TouchController {
         satelliteLock = false;
         satelliteTargetAngle = null;
         flickFacing = null;
+    }
+
+    /**
+     * Resynchronizes the relative touch drag offset when the player entity
+     * is clamped against scenery, ceilings, or level boundaries.
+     * Eliminates touch deadzones and sticky movement when changing drag direction away from obstacles.
+     *
+     * @param playerX The current clamped X position of the player.
+     * @param playerY The current clamped Y position of the player.
+     */
+    public void resync(float playerX, float playerY) {
+        if (primaryId != -1 && touchInitialized) {
+            touchDeltaX = primaryX - playerX;
+            touchDeltaY = primaryY - playerY;
+            deltaXTactil = touchDeltaX;
+            deltaYTactil = touchDeltaY;
+        }
     }
 
     public void update(float dt) {
@@ -185,10 +205,18 @@ public class TouchController {
 
     public PointF onTouchMove(int pointerId, float x, float y) {
         if (primaryId == pointerId) {
+            float moveDx = x - primaryX;
             primaryX = x;
             primaryY = y;
             isTouching = true;
             isFiring = true;
+
+            // Directional facing on touch drag
+            if (moveDx < -1.5f) {
+                flickFacing = false; // Turn left
+            } else if (moveDx > 1.5f) {
+                flickFacing = true; // Turn right
+            }
 
             if (touchInitialized) {
                 float newX = x - touchDeltaX;

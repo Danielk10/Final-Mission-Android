@@ -28,6 +28,7 @@ public class PowerUp {
         POD_CONTAINER, // Legacy alias
         WIDE,          // 'W'
         LASER,         // 'L'
+        BOMB,          // 'B' (Heavy bomb weapon)
         SPEED,         // 'S'
         LIFE           // 'B' (Life energy recovery - authentic NES)
     }
@@ -81,8 +82,9 @@ public class PowerUp {
 
     public static Type chooseRandomDrop() {
         double r = Math.random();
-        if (r < 0.35) return Type.WIDE;
-        if (r < 0.65) return Type.LASER;
+        if (r < 0.25) return Type.WIDE;
+        if (r < 0.50) return Type.LASER;
+        if (r < 0.70) return Type.BOMB;
         if (r < 0.85) return Type.SPEED;
         return Type.LIFE; // 'B'
     }
@@ -144,7 +146,9 @@ public class PowerUp {
     }
 
     public void applyTo(Player player, AudioManager audio) {
-        audio.playSound(AudioManager.SFX_PODER);
+        if (audio != null) {
+            audio.playSound(AudioManager.SFX_PODER);
+        }
         switch (type) {
             case WIDE:
                 player.upgradeWeapon(WeaponType.WIDE);
@@ -154,16 +158,15 @@ public class PowerUp {
                 player.upgradeWeapon(WeaponType.LASER);
                 player.addSatellite();
                 break;
+            case BOMB:
+            case LIFE:
+                // 'B' Capsule: Upgrades to Bomb weapon, restores 1 life pip, and awards satellite
+                player.upgradeWeapon(WeaponType.BOMB);
+                player.heal(1);
+                player.addSatellite();
+                break;
             case SPEED:
                 player.increaseSpeed();
-                break;
-            case LIFE:
-                // 'B': Authentic health energy recovery (strictly NO BOMBS in Japanese release)
-                // Restores 1 life bar / HP block (max 3 HP in Japanese Final Mission)
-                player.heal(1);
-                if (player.health >= Player.MAX_HEALTH) {
-                    player.addSatellite();
-                }
                 break;
             default:
                 break;
@@ -191,11 +194,12 @@ public class PowerUp {
                 case LASER:
                     bmp = loader.getBitmap("poderL.png");
                     break;
-                case SPEED:
-                    bmp = loader.getBitmap("poderS.png");
-                    break;
+                case BOMB:
                 case LIFE:
                     bmp = loader.getBitmap("poderB.png");
+                    break;
+                case SPEED:
+                    bmp = loader.getBitmap("poderS.png");
                     break;
                 default:
                     break;
@@ -205,7 +209,14 @@ public class PowerUp {
         if (bmp != null) {
             float drawX = x - bmp.getWidth() / 2f;
             float drawY = y - bmp.getHeight() / 2f;
-            canvas.drawBitmap(bmp, drawX, drawY, paint);
+            if (isContainer() && hitFlashTimer > 0f) {
+                // Visual hit feedback: brief flash when canister is struck by bullet
+                Paint flashPaint = new Paint(paint);
+                flashPaint.setColorFilter(new android.graphics.LightingColorFilter(0xFFFFFFFF, 0x00888888));
+                canvas.drawBitmap(bmp, drawX, drawY, flashPaint);
+            } else {
+                canvas.drawBitmap(bmp, drawX, drawY, paint);
+            }
         }
     }
 }

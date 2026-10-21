@@ -13,25 +13,36 @@ import java.util.List;
 
 /**
  * Drone Flyer enemy from Final Mission NES:
- * High-speed aerial attack drones that fly in sinusoidal wave formations and attack in squads.
+ * High-speed aerial scouts that fly in sinusoidal oscillating wave formations in squads of 3.
+ * As they swoop across the screen and align with the player, they drop targeted angled plasma shots.
  */
 public class DroneFlyer extends Enemy {
 
     private final float baseSpeed;
     private final float startY;
+    private final float amplitude;
     private float waveTimer = 0f;
-    private float shootTimer;
+    private float shootCooldown = 0.5f;
+    private int droppedShotCount = 0;
+    private final int maxShotsPerPass;
+
     private float animTimer = 0f;
     private int animFrame = 0;
     private final boolean moveLeft;
 
     public DroneFlyer(float x, float y, boolean moveLeft) {
+        this(x, y, moveLeft, 0f);
+    }
+
+    public DroneFlyer(float x, float y, boolean moveLeft, float waveOffset) {
         super(x, y, 16f, 16f, 2f, 200);
         this.startY = y;
         this.moveLeft = moveLeft;
-        this.baseSpeed = 70f + (float) (Math.random() * 25f);
-        this.shootTimer = 1.0f + (float) (Math.random() * 1.5f);
-        this.waveTimer = (float) (Math.random() * Math.PI * 2);
+        this.waveTimer = waveOffset;
+        this.amplitude = 26f;
+        this.baseSpeed = 75f;
+        this.shootCooldown = 0.4f + (float) (Math.random() * 0.4f);
+        this.maxShotsPerPass = 2;
     }
 
     @Override
@@ -42,30 +53,42 @@ public class DroneFlyer extends Enemy {
             hitFlashTimer -= dt;
         }
 
+        // Rotor/wing flap animation cycle (frames 1, 2, 3)
         animTimer += dt;
-        if (animTimer >= 0.1f) {
+        if (animTimer >= 0.08f) {
             animTimer = 0f;
             animFrame = (animFrame + 1) % 3;
         }
 
-        waveTimer += dt * 3.5f;
-
-        // Sinusoidal wave flight
+        // Sinusoidal oscillating wave flight
+        waveTimer += dt * 3.4f;
         float speed = moveLeft ? (baseSpeed + scrollSpeed) : -baseSpeed;
         x -= speed * dt;
-        y = startY + (float) Math.sin(waveTimer) * 28f;
+        y = startY + (float) Math.sin(waveTimer) * amplitude;
 
-        // Aimed shooting
-        shootTimer -= dt;
-        if (shootTimer <= 0f) {
-            shootTimer = 2.2f + (float) (Math.random() * 1.0f);
-            if (x > 10 && x < 450 && player.alive) {
-                enemyBullets.add(Bullet.createEnemyNormal(x + width / 2f, y + height / 2f,
-                        player.x + player.width / 2f, player.y + player.height / 2f, 110f));
+        if (shootCooldown > 0f) {
+            shootCooldown -= dt;
+        }
+
+        // Drops angled shots when aligned with player in airspace
+        if (player.alive && x > 10f && x < 550f && shootCooldown <= 0f && droppedShotCount < maxShotsPerPass) {
+            float playerCenterX = player.x + player.width / 2f;
+            float droneCenterX = x + width / 2f;
+            float dx = Math.abs(droneCenterX - playerCenterX);
+
+            // Drop shot when within tactical alignment corridor
+            if (dx <= 65f) {
+                shootCooldown = 1.3f;
+                droppedShotCount++;
+                float dropX = droneCenterX;
+                float dropY = y + height;
+                float targetX = playerCenterX;
+                float targetY = player.y + player.height / 2f;
+                enemyBullets.add(Bullet.createEnemyNormal(dropX, dropY, targetX, targetY, 115f));
             }
         }
 
-        if (x < -50 || x > 600) {
+        if (x < -60f || x > 650f) {
             alive = false;
         }
     }

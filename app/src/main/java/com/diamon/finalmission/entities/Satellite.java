@@ -29,11 +29,22 @@ public class Satellite {
 
     public Satellite(int podIndex) {
         this.podIndex = podIndex;
-        this.orbitAngle = (float) (podIndex * Math.PI);
-        this.aimAngle = 0f;
+        // Base orbit angle starts at -PI/2 (top). Pod 0 is top, Pod 1 is bottom (separated by PI).
+        this.orbitAngle = (float) (-Math.PI / 2.0);
+        this.aimAngle = (float) (-Math.PI / 2.0 + podIndex * Math.PI);
     }
 
     public void update(float dt, float playerCenterX, float playerCenterY, boolean lockActive, Float targetAngle) {
+        update(dt, playerCenterX, playerCenterY, lockActive, targetAngle, 0f, 0f, false, 0f);
+    }
+
+    public void update(float dt, float playerCenterX, float playerCenterY, boolean lockActive, Float targetAngle,
+                       boolean isMoving, float moveDist) {
+        update(dt, playerCenterX, playerCenterY, lockActive, targetAngle, isMoving ? moveDist : 0f, 0f, isMoving, moveDist);
+    }
+
+    public void update(float dt, float playerCenterX, float playerCenterY, boolean lockActive, Float targetAngle,
+                       float dx, float dy, boolean isMoving, float moveDist) {
         animTimer += dt;
         if (animTimer >= 0.10f) {
             animTimer = 0f;
@@ -60,9 +71,35 @@ public class Satellite {
                 this.y = playerCenterY + (float) Math.sin(lockedAngle) * orbitRadius;
             }
         } else {
-            // Unlocked: clear lock memory and orbit fluidly 360 degrees
+            // Unlocked: In authentic NES Final Mission (ROM Bank 7 $E004 / $E065),
+            // satellites DO NOT auto-spin when the player is stationary!
+            // Orbit rotation is driven by player movement direction:
+            // - Moving RIGHT: counter-clockwise (orbitAngle -= step)
+            // - Moving LEFT: clockwise (orbitAngle += step)
+            // - Moving UP: counter-clockwise (orbitAngle -= step)
+            // - Moving DOWN: clockwise (orbitAngle += step)
+            // - Clamped step prevents rapid spin during touch dragging
             this.lockedAngle = null;
-            orbitAngle += orbitSpeed * dt;
+            if (isMoving && (Math.abs(dx) > 0.05f || Math.abs(dy) > 0.05f || moveDist > 0.05f)) {
+                float rawStep = (moveDist > 0.001f) ? Math.max(orbitSpeed * dt, moveDist * 0.06f) : (orbitSpeed * dt);
+                float step = Math.min(0.15f, rawStep);
+
+                if (Math.abs(dx) >= Math.abs(dy)) {
+                    if (dx > 0.05f) {
+                        orbitAngle -= step; // RIGHT -> CCW
+                    } else if (dx < -0.05f) {
+                        orbitAngle += step; // LEFT -> CW
+                    } else if (moveDist > 0.05f) {
+                        orbitAngle -= step;
+                    }
+                } else {
+                    if (dy < -0.05f) {
+                        orbitAngle -= step; // UP (dy < 0) -> CCW
+                    } else if (dy > 0.05f) {
+                        orbitAngle += step; // DOWN (dy > 0) -> CW
+                    }
+                }
+            }
             float currentAngle = (float) (orbitAngle + (podIndex * Math.PI));
             this.aimAngle = currentAngle;
             this.x = playerCenterX + (float) Math.cos(currentAngle) * orbitRadius;
@@ -79,6 +116,8 @@ public class Satellite {
             return Bullet.createSatelliteWide(x, y, aimAngle);
         } else if (weaponType == WeaponType.LASER) {
             return Bullet.createSatelliteLaser(x, y, aimAngle);
+        } else if (weaponType == WeaponType.BOMB) {
+            return Bullet.createSatelliteBomb(x, y, aimAngle);
         } else {
             return Bullet.createSatellite(x, y, aimAngle);
         }
@@ -95,22 +134,28 @@ public class Satellite {
 
         if (deg >= -22.5 && deg < 22.5) {
             spriteName = "sateliteHD" + frame + ".png";
+            flipY = false;
         } else if (deg >= 22.5 && deg < 67.5) {
             spriteName = "sateliteDD" + frame + ".png";
+            flipY = true; // DD slopes up-right naturally; flip vertically to aim down-right
         } else if (deg >= 67.5 && deg < 112.5) {
             spriteName = "sateliteVB" + frame + ".png";
+            flipY = false;
         } else if (deg >= 112.5 && deg < 157.5) {
             spriteName = "sateliteDI" + frame + ".png";
+            flipY = true; // DI slopes up-left naturally; flip vertically to aim down-left
         } else if (deg >= 157.5 || deg < -157.5) {
             spriteName = "sateliteHI" + frame + ".png";
+            flipY = false;
         } else if (deg >= -157.5 && deg < -112.5) {
             spriteName = "sateliteDI" + frame + ".png";
-            flipY = true;
+            flipY = false;
         } else if (deg >= -112.5 && deg < -67.5) {
             spriteName = "sateliteVA" + frame + ".png";
+            flipY = false;
         } else if (deg >= -67.5 && deg < -22.5) {
             spriteName = "sateliteDD" + frame + ".png";
-            flipY = true;
+            flipY = false;
         }
 
         Bitmap bmp = loader.getBitmap(spriteName);

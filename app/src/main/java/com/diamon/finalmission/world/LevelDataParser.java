@@ -43,19 +43,76 @@ public class LevelDataParser {
     private boolean isLoaded = false;
     private int defaultLevel = 1;
 
+    public LevelDataParser() {
+        for (int i = 1; i <= StageConfig.TOTAL_STAGES; i++) {
+            levelSpawns.put("Nivel " + i, new ArrayList<>());
+        }
+        loadData((Context) null);
+    }
+
+    public LevelDataParser(InputStream is) {
+        for (int i = 1; i <= StageConfig.TOTAL_STAGES; i++) {
+            levelSpawns.put("Nivel " + i, new ArrayList<>());
+        }
+        loadData(is);
+    }
+
     public LevelDataParser(Context context) {
+        for (int i = 1; i <= StageConfig.TOTAL_STAGES; i++) {
+            levelSpawns.put("Nivel " + i, new ArrayList<>());
+        }
         loadData(context);
     }
 
     public void loadData(Context context) {
+        if (context != null) {
+            try (InputStream is = context.getAssets().open(ASSET_PATH)) {
+                loadData(is);
+                return;
+            } catch (Exception ignored) {}
+        }
+
+        // Fallback 1: ClassLoader (useful in unit test environments and packaged jar/apk resources)
+        try {
+            InputStream is = LevelDataParser.class.getClassLoader() != null ?
+                    LevelDataParser.class.getClassLoader().getResourceAsStream(ASSET_PATH) : null;
+            if (is == null && LevelDataParser.class.getClassLoader() != null) {
+                is = LevelDataParser.class.getClassLoader().getResourceAsStream("assets/" + ASSET_PATH);
+            }
+            if (is != null) {
+                try (InputStream stream = is) {
+                    loadData(stream);
+                    return;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback 2: Direct file system paths (JVM unit tests)
+        String[] paths = new String[]{
+                ASSET_PATH,
+                "app/src/main/assets/" + ASSET_PATH,
+                "src/main/assets/" + ASSET_PATH
+        };
+        for (String p : paths) {
+            java.io.File file = new java.io.File(p);
+            if (file.exists() && file.canRead()) {
+                try (InputStream is = new java.io.FileInputStream(file)) {
+                    loadData(is);
+                    return;
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public void loadData(InputStream is) {
         levelSpawns.clear();
         for (int i = 1; i <= StageConfig.TOTAL_STAGES; i++) {
             levelSpawns.put("Nivel " + i, new ArrayList<>());
         }
 
-        try (InputStream is = context.getAssets().open(ASSET_PATH);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+        if (is == null) return;
 
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String line1 = reader.readLine(); // boolean readInternalData
             String line2 = reader.readLine(); // int actorCount
             String line3 = reader.readLine(); // int levelNumber
@@ -92,21 +149,27 @@ public class LevelDataParser {
                     list.add(def);
                     count++;
                 } catch (NumberFormatException e) {
-                    Log.w(TAG, "Error parsing actor coordinate: " + typeLine, e);
+                    logWarning("Error parsing actor coordinate: " + typeLine, e);
                 }
             }
 
             isLoaded = true;
-            Log.i(TAG, "Successfully loaded " + count + " actor spawn definitions from " + ASSET_PATH);
+            logInfo("Successfully loaded " + count + " actor spawn definitions from " + ASSET_PATH);
         } catch (Exception e) {
-            Log.e(TAG, "Error loading asset file " + ASSET_PATH, e);
+            logError("Error loading stream for " + ASSET_PATH, e);
         }
     }
 
     public List<ActorSpawnDef> getSpawnsForLevel(int levelNumber) {
+        if (levelNumber < 1) levelNumber = 1;
+        if (levelNumber > StageConfig.TOTAL_STAGES) levelNumber = StageConfig.TOTAL_STAGES;
         String key = "Nivel " + levelNumber;
         List<ActorSpawnDef> list = levelSpawns.get(key);
         return list != null ? list : new ArrayList<>();
+    }
+
+    public List<ActorSpawnDef> getSpawnsForStage(int stageNumber) {
+        return getSpawnsForLevel(stageNumber);
     }
 
     public boolean isLoaded() {
@@ -115,5 +178,29 @@ public class LevelDataParser {
 
     public int getDefaultLevel() {
         return defaultLevel;
+    }
+
+    private static void logInfo(String msg) {
+        try {
+            Log.i(TAG, msg);
+        } catch (Throwable t) {
+            System.out.println("[" + TAG + "] " + msg);
+        }
+    }
+
+    private static void logWarning(String msg, Throwable e) {
+        try {
+            Log.w(TAG, msg, e);
+        } catch (Throwable t) {
+            System.err.println("[" + TAG + "] " + msg + ": " + e);
+        }
+    }
+
+    private static void logError(String msg, Throwable e) {
+        try {
+            Log.e(TAG, msg, e);
+        } catch (Throwable t) {
+            System.err.println("[" + TAG + "] " + msg + ": " + e);
+        }
     }
 }

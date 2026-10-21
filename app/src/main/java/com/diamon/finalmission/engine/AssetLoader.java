@@ -83,6 +83,39 @@ public class AssetLoader {
         return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
     }
 
+    /**
+     * Creates or retrieves a red-tinted version of Sparky's sprite for Sergei Missionov (2P),
+     * swapping Sparky's blue suit palette (66, 64, 255) to Sergei's authentic red suit palette (181, 49, 32).
+     */
+    public Bitmap getSergeiBitmap(String name) {
+        String key = "sergei_" + name;
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
+        Bitmap base = getBitmap(name);
+        if (base == null) return null;
+
+        int w = base.getWidth();
+        int h = base.getHeight();
+        int[] pixels = new int[w * h];
+        base.getPixels(pixels, 0, w, 0, 0, w, h);
+        for (int i = 0; i < pixels.length; i++) {
+            int c = pixels[i];
+            int a = (c >> 24) & 0xFF;
+            int r = (c >> 16) & 0xFF;
+            int g = (c >> 8) & 0xFF;
+            int b = c & 0xFF;
+            // Detect Sparky's blue suit color (66, 64, 255)
+            if (a > 128 && b > 180 && r < 110 && g < 110) {
+                // Replace with Sergei's red suit color (181, 49, 32)
+                pixels[i] = (a << 24) | (181 << 16) | (49 << 8) | 32;
+            }
+        }
+        Bitmap result = Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888);
+        cache.put(key, result);
+        return result;
+    }
+
     public void clear() {
         for (Bitmap bmp : cache.values()) {
             if (bmp != null && !bmp.isRecycled()) {

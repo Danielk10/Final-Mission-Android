@@ -6,7 +6,8 @@ package com.diamon.finalmission.entities;
 public enum WeaponType {
     NORMAL("Normal", 1),
     WIDE("Wide", 2),
-    LASER("Laser", 3);
+    LASER("Laser", 3),
+    BOMB("Bomb", 4);
 
     private final String displayName;
     private final int level;

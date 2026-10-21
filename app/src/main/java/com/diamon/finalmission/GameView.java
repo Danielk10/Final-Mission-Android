@@ -20,6 +20,7 @@ import com.diamon.finalmission.engine.GameState;
 import com.diamon.finalmission.engine.TouchController;
 import com.diamon.finalmission.ui.HUD;
 import com.diamon.finalmission.world.Level;
+import com.diamon.finalmission.world.StageConfig;
 
 import java.util.Random;
 
@@ -42,6 +43,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private SurfaceHolder holder;
     private Thread renderThread;
     private volatile boolean isRunning = false;
+    private volatile boolean hasSurface = false;
+    private final Object surfaceLock = new Object();
 
     // Virtual widescreen retro canvas and blit buffer
     private Bitmap virtualBitmap;
@@ -56,16 +59,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private TouchController touchController;
     private Level level;
     private HUD hud;
-    private GameState gameState = GameState.MENU;
+    private GameState gameState = GameState.SPLASH;
 
     // Character Selection and Menu Options
-    private int selectedCharacter = 1; // 1 = Arnold, 2 = Sigourney
-    private int menuOptionIndex = 0;   // 0 = 1P Arnold, 1 = 2P Sigourney, 2 = Help, 3 = Prologue
+    private int selectedCharacter = 1; // 1 = Sparky, 2 = Sergei
+    private int menuOptionIndex = 0;   // 0 = 1P Sparky, 1 = 1P Sergei, 2 = 2P, 3 = Help, 4 = Prologue
     private float menuTimer = 0f;
     private float menuIdleTimer = 0f;
     private float stateTransitionTimer = 0f;
 
     // Screen Timers
+    private float splashTimer = 0f;
     private float prologueTimer = 0f;
     private float stageIntroTimer = 0f;
     private float continueCountdown = 9.99f;
@@ -160,7 +164,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         setFocusable(true);
         setKeepScreenOn(true);
 
-        setGameState(GameState.MENU);
+        setGameState(GameState.SPLASH);
     }
 
     public void setGameState(GameState newState) {
@@ -168,6 +172,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         stateTransitionTimer = 0f;
 
         switch (newState) {
+            case SPLASH:
+                splashTimer = 0f;
+                audioManager.stopMusic();
+                audioManager.playSound(AudioManager.SFX_PRESENTACION);
+                break;
             case PROLOGUE:
                 prologueTimer = 0f;
                 audioManager.stopMusic();
@@ -176,6 +185,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             case MENU:
                 menuIdleTimer = 0f;
                 audioManager.stopMusic();
+                audioManager.playMusic(AudioManager.BGM_MENU, true);
                 break;
             case HELP:
                 break;
@@ -218,37 +228,42 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        hasSurface = true;
         resume();
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (width <= 0 || height <= 0) return;
+        hasSurface = true;
 
         // Adaptive widescreen landscape mode without black bars (100% native fill)
         float aspect = (float) width / (float) height;
         virtualWidth = Math.max(256, Math.round(VIRTUAL_HEIGHT * aspect));
 
-        // Recreate virtual retro buffer matching display aspect ratio
-        if (virtualBitmap != null && !virtualBitmap.isRecycled()) {
-            virtualBitmap.recycle();
+        synchronized (surfaceLock) {
+            Bitmap oldBmp = virtualBitmap;
+            virtualBitmap = Bitmap.createBitmap(virtualWidth, VIRTUAL_HEIGHT, Bitmap.Config.ARGB_8888);
+            virtualCanvas = new Canvas(virtualBitmap);
+            if (oldBmp != null && !oldBmp.isRecycled()) {
+                oldBmp.recycle();
+            }
+
+            srcRect.set(0, 0, virtualWidth, VIRTUAL_HEIGHT);
+            dstRect.set(0f, 0f, (float) width, (float) height);
+
+            level.setVirtualDimensions(virtualWidth, VIRTUAL_HEIGHT);
         }
-        virtualBitmap = Bitmap.createBitmap(virtualWidth, VIRTUAL_HEIGHT, Bitmap.Config.ARGB_8888);
-        virtualCanvas = new Canvas(virtualBitmap);
-
-        srcRect.set(0, 0, virtualWidth, VIRTUAL_HEIGHT);
-        dstRect.set(0f, 0f, (float) width, (float) height);
-
-        level.setVirtualDimensions(virtualWidth, VIRTUAL_HEIGHT);
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        hasSurface = false;
         pause();
     }
 
     public void resume() {
-        if (!isRunning) {
+        if (hasSurface && !isRunning) {
             isRunning = true;
             renderThread = new Thread(this, "FinalMissionRenderThread");
             renderThread.start();
@@ -258,7 +273,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     public void pause() {
         isRunning = false;
-        audioManager.pauseMusic();
+        if (audioManager != null) {
+            audioManager.pauseMusic();
+        }
         if (renderThread != null) {
             try {
                 renderThread.join(600);
@@ -289,19 +306,33 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
             if (dt > 0.1f) dt = 0.016f;
 
-            updateGame(dt);
-            renderGame();
+            if (!hasSurface || holder == null || !holder.getSurface().isValid()) {
+                try {
+                    Thread.sleep(16);
+                } catch (InterruptedException ignored) {}
+                continue;
+            }
+
+            synchronized (surfaceLock) {
+                if (virtualBitmap == null || virtualBitmap.isRecycled() || virtualCanvas == null) {
+                    try {
+                        Thread.sleep(16);
+                    } catch (InterruptedException ignored) {}
+                    continue;
+                }
+                updateGame(dt);
+                renderGame();
+            }
 
             Canvas canvas = null;
             try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    canvas = holder.lockHardwareCanvas();
-                }
-                if (canvas == null) {
-                    canvas = holder.lockCanvas();
-                }
+                canvas = holder.lockCanvas();
                 if (canvas != null) {
-                    canvas.drawBitmap(virtualBitmap, srcRect, dstRect, renderPaint);
+                    synchronized (surfaceLock) {
+                        if (virtualBitmap != null && !virtualBitmap.isRecycled()) {
+                            canvas.drawBitmap(virtualBitmap, srcRect, dstRect, renderPaint);
+                        }
+                    }
                 }
             } catch (Exception ignored) {
             } finally {
@@ -328,6 +359,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         menuTimer += dt;
 
         switch (gameState) {
+            case SPLASH:
+                splashTimer += dt;
+                if (splashTimer >= 2.0f) {
+                    setGameState(GameState.MENU);
+                }
+                break;
+
             case PROLOGUE:
                 prologueTimer += dt;
                 if (prologueTimer >= 19.5f) {
@@ -361,7 +399,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 }
 
                 level.update(dt, touchController.isTouching, touchController.satelliteLock,
-                        touchController.satelliteTargetAngle, audioManager);
+                        touchController.satelliteTargetAngle, audioManager, touchController);
+                touchController.resync(level.player.x, level.player.y);
 
                 // Lives exhausted -> Authentic NES Continue Screen
                 if (!level.player.alive && level.player.lives <= 0) {
@@ -401,7 +440,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     private void advanceToNextStage() {
-        if (level.currentStage < 8) {
+        if (level.currentStage < StageConfig.TOTAL_STAGES) {
             level.initStage(level.currentStage + 1);
             setGameState(GameState.STAGE_INTRO);
         } else {
@@ -411,6 +450,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private void renderGame() {
         switch (gameState) {
+            case SPLASH:
+                renderSplashScreen();
+                break;
             case PROLOGUE:
                 renderPrologueScreen();
                 break;
@@ -426,7 +468,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             case PLAYING:
                 level.render(virtualCanvas, assetLoader, renderPaint);
                 hud.render(virtualCanvas, assetLoader, level.player, level.score, level.highScore,
-                        level.boss, level.stageTime, level.currentStage);
+                        level.boss, level.stageTime, level.currentStage, touchController);
                 break;
             case STAGE_CLEAR:
                 level.render(virtualCanvas, assetLoader, renderPaint);
@@ -435,7 +477,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             case PAUSED:
                 level.render(virtualCanvas, assetLoader, renderPaint);
                 hud.render(virtualCanvas, assetLoader, level.player, level.score, level.highScore,
-                        level.boss, level.stageTime, level.currentStage);
+                        level.boss, level.stageTime, level.currentStage, touchController);
                 virtualCanvas.drawColor(0x88000000);
                 drawCenteredText(virtualCanvas, "PAUSED", 112f, Color.YELLOW, 12f);
                 break;
@@ -448,6 +490,27 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             case VICTORY:
                 renderVictoryScreen();
                 break;
+        }
+    }
+
+    /**
+     * Startup Splash Screen:
+     * - Authentic Natsume logo (introduccion.png) centered on pure black screen.
+     * - Fanfare precentacion1.wav plays upon launch.
+     * - Lasts ~2.0 seconds (or tap to skip to Title Menu).
+     */
+    private void renderSplashScreen() {
+        virtualCanvas.drawColor(Color.BLACK);
+
+        Bitmap natsumeLogo = assetLoader.getBitmap("introduccion.png");
+        if (natsumeLogo != null) {
+            float logoX = (virtualWidth - 256f) / 2f;
+            float logoY = (VIRTUAL_HEIGHT - 240f) / 2f;
+            virtualCanvas.drawBitmap(natsumeLogo, logoX, logoY, renderPaint);
+        }
+
+        if (splashTimer > 0.4f) {
+            drawShadowText(virtualCanvas, "TAP TO SKIP", virtualWidth - 58f, 216f, Color.GRAY, 6.5f);
         }
     }
 
@@ -494,13 +557,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             float hero1X = (virtualWidth * 0.38f) + (flightPhase * 50f);
             float hero2X = (virtualWidth * 0.58f) + (flightPhase * 50f);
 
-            int aFrame = (int) ((menuTimer * 12) % 6) + 1;
+            int aFrame = (int) ((menuTimer * 8) % 3) + 1; // Frames 1..3 for flying jetpack sortie, never death frames 4..6!
             Bitmap arnoldBmp = assetLoader.getBitmap("jugador1D" + aFrame + ".png");
             if (arnoldBmp != null) {
                 virtualCanvas.drawBitmap(arnoldBmp, hero1X, heroY, renderPaint);
             }
 
-            int sFrame = (int) ((menuTimer * 12) % 4) + 1;
+            int sFrame = (int) ((menuTimer * 8) % 2) + 1; // Frames 1..2 for flying jetpack sortie, never death frames 3..4!
             Bitmap sigourneyBmp = assetLoader.getBitmap("jugador2D" + sFrame + ".png");
             if (sigourneyBmp != null) {
                 virtualCanvas.drawBitmap(sigourneyBmp, hero2X, heroY + 4f, renderPaint);
@@ -549,8 +612,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     /**
      * 2. Title & Main Menu:
      * - Uses menu1.png and menu2.png alternating title shine.
-     * - Options: 1P Arnold, 2P Sigourney, Help / Controls (ayuda.png), Story Prologue.
+     * - Options: 1P SPARKY, 1P SERGEI, 2 PLAYERS, HELP / CONTROLS (ayuda.png), STORY PROLOGUE.
      * - Animated selector cursor (selector1.png / selector2.png).
+     * - Displays BOTH playable characters side-by-side with orbiting satellites and gentle hovering bob.
      */
     private void renderMenuScreen() {
         virtualCanvas.drawColor(Color.BLACK);
@@ -574,46 +638,120 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         }
 
         if (menuTimer % 0.6f < 0.38f) {
-            drawShadowText(virtualCanvas, "TOUCH TO START MISSION", menuOffsetLeft + 68f, 144f, Color.rgb(255, 240, 160), 7.5f);
+            drawShadowText(virtualCanvas, "TOUCH TO START MISSION", menuOffsetLeft + 54f, 134f, Color.rgb(255, 240, 160), 7.5f);
         }
 
-        // Sparky (1P) and Sergei Missionov (2P) selector options
-        drawShadowText(virtualCanvas, "(SPARKY)", menuOffsetLeft + 154f, 168f,
-                (selectedCharacter == 1) ? Color.rgb(255, 220, 120) : Color.LTGRAY, 7f);
-        drawShadowText(virtualCanvas, "(SERGEI)", menuOffsetLeft + 162f, 184f,
-                (selectedCharacter == 2) ? Color.rgb(130, 220, 255) : Color.LTGRAY, 7f);
+        // Options list
+        String[] options = {
+                "1 PLAYER (SPARKY)",
+                "1 PLAYER (SERGEI)",
+                "2 PLAYERS",
+                "HELP / CONTROLS",
+                "STORY PROLOGUE"
+        };
+        float startY = 148f;
+        float rowHeight = 13.5f;
 
-        drawShadowText(virtualCanvas, "HELP / CONTROLS", menuOffsetLeft + 90f, 196f,
-                (menuOptionIndex == 2) ? Color.rgb(255, 240, 160) : Color.WHITE, 7.5f);
-        drawShadowText(virtualCanvas, "STORY PROLOGUE", menuOffsetLeft + 90f, 206f,
-                (menuOptionIndex == 3) ? Color.rgb(255, 240, 160) : Color.rgb(180, 210, 240), 7f);
-
-        // Animated character previews
-        int hero1Frame = (int) ((menuTimer * 6f) % 6) + 1;
-        Bitmap aMini = assetLoader.getBitmap("jugador1D" + hero1Frame + ".png");
-        if (aMini != null) {
-            virtualCanvas.drawBitmap(aMini, menuOffsetLeft + 208f, 154f, renderPaint);
+        for (int i = 0; i < options.length; i++) {
+            float optY = startY + (i * rowHeight);
+            int optColor = Color.WHITE;
+            if (i == menuOptionIndex) {
+                optColor = Color.rgb(255, 240, 150); // Active cursor selection
+            } else if (i == 0 && selectedCharacter == 1) {
+                optColor = Color.rgb(130, 220, 255); // Sparky active
+            } else if (i == 1 && selectedCharacter == 2) {
+                optColor = Color.rgb(255, 170, 110); // Sergei active
+            } else if (i == 4) {
+                optColor = Color.rgb(180, 210, 240);
+            }
+            drawShadowText(virtualCanvas, options[i], menuOffsetLeft + 58f, optY, optColor, 7f);
         }
 
-        int hero2Frame = (int) ((menuTimer * 6f) % 4) + 1;
-        Bitmap sMini = assetLoader.getBitmap("jugador2D" + hero2Frame + ".png");
-        if (sMini != null) {
-            virtualCanvas.drawBitmap(sMini, menuOffsetLeft + 218f, 170f, renderPaint);
-        }
-
-        // Animated NES selector arrow
+        // Animated NES selector arrow (selector1.png / selector2.png)
         int selFrame = (menuTimer % 0.3f < 0.15f) ? 1 : 2;
         Bitmap selector = assetLoader.getBitmap("selector" + selFrame + ".png");
         if (selector != null) {
             float cursorBob = (float) Math.sin(menuTimer * 10f) * 1.5f;
-            float cursorX = menuOffsetLeft + 72f + cursorBob;
-            float cursorY = 160f;
-            if (menuOptionIndex == 1) cursorY = 176f;
-            else if (menuOptionIndex == 2) cursorY = 188f;
-            else if (menuOptionIndex == 3) cursorY = 198f;
-
+            float cursorX = menuOffsetLeft + 44f + cursorBob;
+            float cursorY = startY - 7f + (menuOptionIndex * rowHeight);
             virtualCanvas.drawBitmap(selector, cursorX, cursorY, renderPaint);
         }
+
+        // ==========================================================
+        // BOTH PLAYABLE CHARACTERS DISPLAYED SIDE-BY-SIDE WITH SATELLITES
+        // ==========================================================
+        float showcaseX = menuOffsetLeft + 180f;
+        float heroesBaseY = 148f;
+        float sparkyBob = (float) Math.sin(menuTimer * 3.5f) * 2.5f;
+        float sergeiBob = (float) Math.sin(menuTimer * 3.5f + 1.2f) * 2.5f;
+
+        float sparkyX = showcaseX;
+        float sparkyY = heroesBaseY + sparkyBob;
+        float sergeiX = showcaseX + 38f;
+        float sergeiY = heroesBaseY + sergeiBob;
+
+        float satOrbitSpeed = menuTimer * 4.2f;
+        Bitmap satBmp = assetLoader.getBitmap("sateliteHD1.png");
+        float satW = (satBmp != null) ? satBmp.getWidth() / 2f : 4f;
+        float satH = (satBmp != null) ? satBmp.getHeight() / 2f : 4f;
+
+        // Player 1: SPARKY (blue suit, idle sprite jugador1D1.png)
+        Bitmap sparkyBmp = assetLoader.getBitmap("jugador1D1.png");
+        if (sparkyBmp != null) {
+            if (selectedCharacter == 1) {
+                drawCharacterSelectionBox(virtualCanvas, sparkyX - 4f, sparkyY - 3f,
+                        sparkyBmp.getWidth() + 8f, sparkyBmp.getHeight() + 6f, Color.rgb(96, 180, 255));
+            }
+            virtualCanvas.drawBitmap(sparkyBmp, sparkyX, sparkyY, renderPaint);
+
+            // Orbiting satellites for Sparky (2 satellites)
+            if (satBmp != null) {
+                float s1X = sparkyX + sparkyBmp.getWidth() / 2f + (float) Math.cos(satOrbitSpeed) * 15f;
+                float s1Y = sparkyY + sparkyBmp.getHeight() / 2f + (float) Math.sin(satOrbitSpeed) * 11f;
+                float s2X = sparkyX + sparkyBmp.getWidth() / 2f + (float) Math.cos(satOrbitSpeed + Math.PI) * 15f;
+                float s2Y = sparkyY + sparkyBmp.getHeight() / 2f + (float) Math.sin(satOrbitSpeed + Math.PI) * 11f;
+                virtualCanvas.drawBitmap(satBmp, s1X - satW, s1Y - satH, renderPaint);
+                virtualCanvas.drawBitmap(satBmp, s2X - satW, s2Y - satH, renderPaint);
+            }
+
+            drawCenteredText(virtualCanvas, "SPARKY", sparkyX + sparkyBmp.getWidth() / 2f,
+                    sparkyY + sparkyBmp.getHeight() + 8f,
+                    (selectedCharacter == 1) ? Color.rgb(255, 230, 130) : Color.rgb(130, 200, 255), 6.5f);
+        }
+
+        // Player 2: SERGEI (red/orange suit, idle sprite jugador2D1.png)
+        Bitmap sergeiBmp = assetLoader.getBitmap("jugador2D1.png");
+        if (sergeiBmp != null) {
+            if (selectedCharacter == 2) {
+                drawCharacterSelectionBox(virtualCanvas, sergeiX - 4f, sergeiY - 3f,
+                        sergeiBmp.getWidth() + 8f, sergeiBmp.getHeight() + 6f, Color.rgb(255, 140, 100));
+            }
+            virtualCanvas.drawBitmap(sergeiBmp, sergeiX, sergeiY, renderPaint);
+
+            // Orbiting satellites for Sergei (2 satellites)
+            if (satBmp != null) {
+                float s3X = sergeiX + sergeiBmp.getWidth() / 2f + (float) Math.cos(satOrbitSpeed + 1.2f) * 15f;
+                float s3Y = sergeiY + sergeiBmp.getHeight() / 2f + (float) Math.sin(satOrbitSpeed + 1.2f) * 11f;
+                float s4X = sergeiX + sergeiBmp.getWidth() / 2f + (float) Math.cos(satOrbitSpeed + 1.2f + Math.PI) * 15f;
+                float s4Y = sergeiY + sergeiBmp.getHeight() / 2f + (float) Math.sin(satOrbitSpeed + 1.2f + Math.PI) * 11f;
+                virtualCanvas.drawBitmap(satBmp, s3X - satW, s3Y - satH, renderPaint);
+                virtualCanvas.drawBitmap(satBmp, s4X - satW, s4Y - satH, renderPaint);
+            }
+
+            drawCenteredText(virtualCanvas, "SERGEI", sergeiX + sergeiBmp.getWidth() / 2f,
+                    sergeiY + sergeiBmp.getHeight() + 8f,
+                    (selectedCharacter == 2) ? Color.rgb(255, 230, 130) : Color.rgb(255, 160, 120), 6.5f);
+        }
+    }
+
+    private void drawCharacterSelectionBox(Canvas canvas, float left, float top, float width, float height, int color) {
+        Paint boxPaint = new Paint();
+        boxPaint.setStyle(Paint.Style.STROKE);
+        boxPaint.setStrokeWidth(1.2f);
+        boxPaint.setColor(color);
+        int alpha = (int) (180 + Math.sin(menuTimer * 6.0f) * 60);
+        boxPaint.setAlpha(Math.max(80, Math.min(255, alpha)));
+        canvas.drawRect(left, top, left + width, top + height, boxPaint);
     }
 
     /**
@@ -705,7 +843,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         drawCenteredText(virtualCanvas, String.format("TOTAL SCORE:  %06d", level.score), 178f, Color.rgb(180, 220, 255), 8f);
 
         if (level.tallyFinished && (menuTimer % 0.6f < 0.35f)) {
-            String promptText = (level.currentStage < 8) ? "TOUCH TO PROCEED TO NEXT STAGE" : "TOUCH TO COMPLETE MISSION";
+            String promptText = (level.currentStage < StageConfig.TOTAL_STAGES) ? "TOUCH TO PROCEED TO NEXT STAGE" : "TOUCH TO COMPLETE MISSION";
             drawCenteredText(virtualCanvas, promptText, 202f, Color.YELLOW, 8f);
         }
     }
@@ -763,7 +901,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         }
 
         drawCenteredText(virtualCanvas, "GAME OVER", 100f, Color.WHITE, 12f);
-        drawCenteredText(virtualCanvas, String.format("STAGE REACHED: %d / 8", level.currentStage), 125f, Color.rgb(180, 210, 240), 8f);
+        drawCenteredText(virtualCanvas, String.format("STAGE REACHED: %d / %d", level.currentStage, StageConfig.TOTAL_STAGES), 125f, Color.rgb(180, 210, 240), 8f);
         drawCenteredText(virtualCanvas, String.format("FINAL SCORE:   %06d", level.score), 145f, Color.rgb(255, 215, 120), 8.5f);
 
         if (gameOverTimer > 1.2f && (menuTimer % 0.6f < 0.35f)) {
@@ -784,7 +922,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             virtualCanvas.drawBitmap(vicBmp, menuOffsetLeft, -8f, renderPaint);
         }
 
-        drawCenteredText(virtualCanvas, "ALL 8 MISSIONS ACCOMPLISHED!", 85f, Color.rgb(255, 220, 120), 10f);
+        drawCenteredText(virtualCanvas, "ALL " + StageConfig.TOTAL_STAGES + " MISSIONS ACCOMPLISHED!", 85f, Color.rgb(255, 220, 120), 10f);
         drawCenteredText(virtualCanvas, "THE EARTH IS SAVED!", 105f, Color.WHITE, 8.5f);
         drawCenteredText(virtualCanvas, String.format("FINAL HIGH SCORE: %06d", level.score), 130f, Color.rgb(180, 220, 255), 8.5f);
         drawCenteredText(virtualCanvas, "CONGRATULATIONS SPARKY & SERGEI MISSIONOV", 155f, Color.rgb(255, 200, 130), 8f);
@@ -833,8 +971,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         drawShadowText(canvas, text, x, y, color, size);
     }
 
+    private void drawCenteredText(Canvas canvas, String text, float centerX, float y, int color, float size) {
+        retroTextPaint.setTextSize(size);
+        float textW = retroTextPaint.measureText(text);
+        float x = centerX - textW / 2f;
+        drawShadowText(canvas, text, x, y, color, size);
+    }
+
     public boolean onBackPressed() {
         switch (gameState) {
+            case SPLASH:
             case PROLOGUE:
             case HELP:
             case STAGE_INTRO:
@@ -875,6 +1021,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         if (gameState != GameState.PLAYING) {
             if (action == MotionEvent.ACTION_DOWN) {
                 switch (gameState) {
+                    case SPLASH:
+                        audioManager.playSound(AudioManager.SFX_MENU);
+                        setGameState(GameState.MENU);
+                        return true;
+
                     case PROLOGUE:
                         audioManager.playSound(AudioManager.SFX_MENU);
                         setGameState(GameState.MENU);
@@ -882,31 +1033,81 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
                     case MENU:
                         menuIdleTimer = 0f;
-                        if (touchVirtualY >= 150f && touchVirtualY < 166f) {
+                        float menuX = (virtualWidth - 256f) / 2f;
+                        float startOptY = 148f;
+                        float optRowH = 13.5f;
+
+                        // Check direct tap on Sparky preview
+                        float spkLeft = menuX + 172f;
+                        float spkRight = spkLeft + 36f;
+                        if (touchVirtualX >= spkLeft && touchVirtualX <= spkRight && touchVirtualY >= 140f && touchVirtualY <= 195f) {
                             selectedCharacter = 1;
                             menuOptionIndex = 0;
                             audioManager.playSound(AudioManager.SFX_MENU);
-                            level.initLevel(selectedCharacter);
-                            setGameState(GameState.STAGE_INTRO);
                             return true;
-                        } else if (touchVirtualY >= 166f && touchVirtualY < 182f) {
+                        }
+
+                        // Check direct tap on Sergei preview
+                        float srgLeft = menuX + 210f;
+                        float srgRight = srgLeft + 36f;
+                        if (touchVirtualX >= srgLeft && touchVirtualX <= srgRight && touchVirtualY >= 140f && touchVirtualY <= 195f) {
                             selectedCharacter = 2;
                             menuOptionIndex = 1;
                             audioManager.playSound(AudioManager.SFX_MENU);
+                            return true;
+                        }
+
+                        // Check tap on "TOUCH TO START MISSION"
+                        if (touchVirtualY >= 122f && touchVirtualY < 144f) {
+                            audioManager.playSound(AudioManager.SFX_MENU);
                             level.initLevel(selectedCharacter);
                             setGameState(GameState.STAGE_INTRO);
                             return true;
-                        } else if (touchVirtualY >= 182f && touchVirtualY < 198f) {
-                            menuOptionIndex = 2;
-                            audioManager.playSound(AudioManager.SFX_MENU);
-                            setGameState(GameState.HELP);
-                            return true;
-                        } else if (touchVirtualY >= 198f && touchVirtualY < 216f) {
-                            menuOptionIndex = 3;
-                            audioManager.playSound(AudioManager.SFX_MENU);
-                            setGameState(GameState.PROLOGUE);
-                            return true;
+                        }
+
+                        // Check tap on option rows
+                        if (touchVirtualY >= startOptY - 5f && touchVirtualY < startOptY + (5 * optRowH) + 5f) {
+                            int clickedRow = (int) ((touchVirtualY - (startOptY - 5f)) / optRowH);
+                            clickedRow = Math.max(0, Math.min(4, clickedRow));
+
+                            switch (clickedRow) {
+                                case 0: // 1 PLAYER (SPARKY)
+                                    selectedCharacter = 1;
+                                    menuOptionIndex = 0;
+                                    audioManager.playSound(AudioManager.SFX_MENU);
+                                    level.initLevel(selectedCharacter);
+                                    setGameState(GameState.STAGE_INTRO);
+                                    return true;
+
+                                case 1: // 1 PLAYER (SERGEI)
+                                    selectedCharacter = 2;
+                                    menuOptionIndex = 1;
+                                    audioManager.playSound(AudioManager.SFX_MENU);
+                                    level.initLevel(selectedCharacter);
+                                    setGameState(GameState.STAGE_INTRO);
+                                    return true;
+
+                                case 2: // 2 PLAYERS
+                                    menuOptionIndex = 2;
+                                    audioManager.playSound(AudioManager.SFX_MENU);
+                                    level.initLevel(selectedCharacter);
+                                    setGameState(GameState.STAGE_INTRO);
+                                    return true;
+
+                                case 3: // HELP / CONTROLS
+                                    menuOptionIndex = 3;
+                                    audioManager.playSound(AudioManager.SFX_MENU);
+                                    setGameState(GameState.HELP);
+                                    return true;
+
+                                case 4: // STORY PROLOGUE
+                                    menuOptionIndex = 4;
+                                    audioManager.playSound(AudioManager.SFX_MENU);
+                                    setGameState(GameState.PROLOGUE);
+                                    return true;
+                            }
                         } else {
+                            // Any other tap starts mission
                             audioManager.playSound(AudioManager.SFX_MENU);
                             level.initLevel(selectedCharacter);
                             setGameState(GameState.STAGE_INTRO);
@@ -990,6 +1191,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                     if (newPos != null) {
                         level.player.x = newPos.x;
                         level.player.y = newPos.y;
+                        level.clampPlayerToScenery(touchController);
+                        if (touchController.flickFacing != null) {
+                            level.player.setFacing(touchController.flickFacing);
+                            touchController.flickFacing = null;
+                        }
                     }
                 }
                 return true;

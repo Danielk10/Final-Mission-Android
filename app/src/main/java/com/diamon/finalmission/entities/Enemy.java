@@ -75,6 +75,10 @@ public abstract class Enemy {
     }
 
     public boolean isOffscreen() {
-        return x < -width - 50 || x > 550 || y < -height - 50 || y > 320;
+        return x < -width - 60 || x > 650 || y < -height - 60 || y > 350;
+    }
+
+    public boolean isOffscreen(float screenWidth, float screenHeight) {
+        return x < -width - 50 || x > screenWidth + 80 || y < -height - 50 || y > screenHeight + 60;
     }
 }

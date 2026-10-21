@@ -35,11 +35,18 @@ public class StageConfig {
 
     /**
      * Returns authentic configuration for the requested stage number (1 to 5).
+     * Automatically clamps stage numbers below 1 to 1, and above 5 to 5.
      *
      * @param stageNumber Stage index (1 to 5).
      * @return StageConfig instance configured with authentic parameters.
      */
     public static StageConfig getForStage(int stageNumber) {
+        if (stageNumber < 1) {
+            stageNumber = 1;
+        } else if (stageNumber > TOTAL_STAGES) {
+            stageNumber = TOTAL_STAGES;
+        }
+
         switch (stageNumber) {
             case 1:
                 return new StageConfig(1, "STAGE 1", "DESTROYED CITY",

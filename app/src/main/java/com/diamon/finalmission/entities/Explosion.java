@@ -14,7 +14,9 @@ public class Explosion {
     public enum Type {
         NORMAL,
         MISSILE,
-        BOSS
+        BOSS,
+        MISSILE_SMOKE,
+        SMOKE
     }
 
     public float x;
@@ -35,6 +37,9 @@ public class Explosion {
         if (type == Type.BOSS) {
             maxFrames = 5;
             frameDuration = 0.08f;
+        } else if (type == Type.MISSILE_SMOKE || type == Type.SMOKE) {
+            maxFrames = 3;
+            frameDuration = 0.05f;
         } else {
             maxFrames = 4;
             frameDuration = 0.06f;
@@ -63,6 +68,10 @@ public class Explosion {
                 break;
             case BOSS:
                 spriteName = "explosionB" + currentFrame + ".png";
+                break;
+            case MISSILE_SMOKE:
+            case SMOKE:
+                spriteName = "humoMisil" + currentFrame + ".png";
                 break;
             case NORMAL:
             default:

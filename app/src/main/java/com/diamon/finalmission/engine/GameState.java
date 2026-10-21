@@ -4,6 +4,7 @@ package com.diamon.finalmission.engine;
  * Estados principales del juego Final Mission.
  */
 public enum GameState {
+    SPLASH,
     PROLOGUE,
     MENU,
     HELP,

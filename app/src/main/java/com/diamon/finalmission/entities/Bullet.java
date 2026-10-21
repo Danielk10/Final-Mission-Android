@@ -16,9 +16,11 @@ public class Bullet {
         PLAYER_NORMAL,
         PLAYER_WIDE,
         PLAYER_LASER,
+        PLAYER_BOMB,
         SATELLITE,
         SATELLITE_WIDE,
         SATELLITE_LASER,
+        SATELLITE_BOMB,
         ENEMY_NORMAL,
         ENEMY_JUMPER,
         ENEMY_SALTADOR, // Legacy alias for compatibility
@@ -49,6 +51,12 @@ public class Bullet {
     public int missileHp = 1;
     public int sphereHp = 2; // Durability for destructible energy spheres
 
+    // Animated missile smoke trail support
+    public boolean hasPendingSmoke = false;
+    public float pendingSmokeX = 0f;
+    public float pendingSmokeY = 0f;
+    private float smokeTimer = 0f;
+
     public Bullet(float x, float y, float vx, float vy, Type type, boolean facingRight, float damage) {
         this.x = x;
         this.y = y;
@@ -62,13 +70,13 @@ public class Bullet {
     }
 
     public static Bullet createPlayerNormal(float x, float y, boolean facingRight) {
-        float speed = 340f;
+        float speed = 360f;
         float vx = facingRight ? speed : -speed;
         return new Bullet(x, y, vx, 0f, Type.PLAYER_NORMAL, facingRight, 1.0f);
     }
 
     public static Bullet createPlayerWide(float x, float y, boolean facingRight, float angleDeg) {
-        float speed = 300f;
+        float speed = 320f;
         float rad = (float) Math.toRadians(angleDeg);
         float vx = (float) Math.cos(rad) * speed * (facingRight ? 1f : -1f);
         float vy = (float) Math.sin(rad) * speed;
@@ -76,13 +84,21 @@ public class Bullet {
     }
 
     public static Bullet createPlayerLaser(float x, float y, boolean facingRight) {
-        float speed = 480f;
+        float speed = 520f;
         float vx = facingRight ? speed : -speed;
         return new Bullet(x, y, vx, 0f, Type.PLAYER_LASER, facingRight, 3.0f);
     }
 
+    public static Bullet createPlayerBomb(float x, float y, boolean facingRight) {
+        float speed = 300f;
+        float vx = facingRight ? speed : -speed;
+        Bullet b = new Bullet(x, y, vx, 0f, Type.PLAYER_BOMB, facingRight, 2.5f);
+        b.angle = facingRight ? 0f : (float) Math.PI;
+        return b;
+    }
+
     public static Bullet createSatellite(float x, float y, float angle) {
-        float speed = 340f;
+        float speed = 360f;
         float vx = (float) Math.cos(angle) * speed;
         float vy = (float) Math.sin(angle) * speed;
         Bullet b = new Bullet(x, y, vx, vy, Type.SATELLITE, vx >= 0, 1.2f);
@@ -105,6 +121,15 @@ public class Bullet {
         float vy = (float) Math.sin(angle) * speed;
         Bullet b = new Bullet(x, y, vx, vy, Type.SATELLITE_LASER, vx >= 0, 3.0f);
         b.penetrating = true;
+        b.angle = angle;
+        return b;
+    }
+
+    public static Bullet createSatelliteBomb(float x, float y, float angle) {
+        float speed = 300f;
+        float vx = (float) Math.cos(angle) * speed;
+        float vy = (float) Math.sin(angle) * speed;
+        Bullet b = new Bullet(x, y, vx, vy, Type.SATELLITE_BOMB, vx >= 0, 2.5f);
         b.angle = angle;
         return b;
     }
@@ -137,8 +162,19 @@ public class Bullet {
     }
 
     public static Bullet createEnemyMissile(float x, float y, boolean facingRight) {
-        float vx = facingRight ? 140f : -140f;
-        Bullet b = new Bullet(x, y, vx, 0f, Type.ENEMY_MISSILE, facingRight, 1.5f);
+        return createEnemyMissileDirectional(x, y, facingRight);
+    }
+
+    public static Bullet createEnemyMissileDirectional(float x, float y, boolean facingRight) {
+        float vx = facingRight ? 135f : -135f;
+        Bullet b = new Bullet(x, y, vx, -15f, Type.ENEMY_MISSILE, facingRight, 1.5f);
+        b.missileHp = 2;
+        return b;
+    }
+
+    public static Bullet createEnemyMissileVertical(float x, float y, boolean facingRight) {
+        float vx = facingRight ? 35f : -35f;
+        Bullet b = new Bullet(x, y, vx, -135f, Type.ENEMY_MISSILE, facingRight, 1.5f);
         b.missileHp = 2;
         return b;
     }
@@ -196,9 +232,32 @@ public class Bullet {
         lifetime += dt;
         animTimer += dt;
 
-        // Missile acceleration
+        // Missile flight physics and smoke trail generation
         if (type == Type.ENEMY_MISSILE) {
-            vx += (facingRight ? 100f : -100f) * dt;
+            if (vy < 0f) {
+                // Vertical/diagonal launch curves into horizontal trajectory
+                vy += 100f * dt;
+                vx += (facingRight ? 110f : -110f) * dt;
+            } else {
+                vx += (facingRight ? 80f : -80f) * dt;
+            }
+
+            // Trailing animated smoke puff emission (humoMisil1..3)
+            smokeTimer += dt;
+            if (smokeTimer >= 0.08f) {
+                smokeTimer = 0f;
+                hasPendingSmoke = true;
+                if (vy < -40f && Math.abs(vx) < 60f) {
+                    pendingSmokeX = x;
+                    pendingSmokeY = y + 8f;
+                } else if (Math.abs(vy) > 20f && Math.abs(vx) > 25f) {
+                    pendingSmokeX = facingRight ? (x - 6f) : (x + 6f);
+                    pendingSmokeY = y + 6f;
+                } else {
+                    pendingSmokeX = facingRight ? (x - 8f) : (x + 8f);
+                    pendingSmokeY = y;
+                }
+            }
         }
 
         // Destructible sphere vertical wave
@@ -230,12 +289,17 @@ public class Bullet {
                 bmp = loader.getBitmap(facingRight ? "balaHD.png" : "balaHI.png");
                 break;
             case PLAYER_WIDE:
-                int wFrame = (animFrame % 3) + 1;
+                // Expanding wave projectile: expands from small (1) to medium (2) to large wave (3) as it travels
+                int wFrame = Math.min(3, (int) (lifetime * 16f) + 1);
                 bmp = loader.getBitmap((facingRight ? "balaWD" : "balaWI") + wFrame + ".png");
                 break;
             case PLAYER_LASER:
-                int lFrame = (animFrame % 3) + 1;
+                // Expanding high-speed piercing laser: reaches full 32px length rapidly
+                int lFrame = Math.min(3, (int) (lifetime * 20f) + 1);
                 bmp = loader.getBitmap((facingRight ? "balaLD" : "balaLI") + lFrame + ".png");
+                break;
+            case PLAYER_BOMB:
+                bmp = loader.getBitmap(facingRight ? "balaBD.png" : "balaBI.png");
                 break;
             case SATELLITE:
                 bmp = loader.getBitmap("balaSatelite.png");
@@ -247,6 +311,9 @@ public class Bullet {
             case SATELLITE_LASER:
                 int slFrame = (animFrame % 3) + 1;
                 bmp = loader.getBitmap("balaLD" + slFrame + ".png");
+                break;
+            case SATELLITE_BOMB:
+                bmp = loader.getBitmap("balaBD.png");
                 break;
             case ENEMY_NORMAL:
             case BOSS_PLASMA:
@@ -265,7 +332,22 @@ public class Bullet {
                 break;
             case ENEMY_MISSILE:
                 int mFrame = (animFrame % 2) + 1;
-                bmp = loader.getBitmap((facingRight ? "misilD" : "misilH") + mFrame + ".png");
+                if (vy < -40f && Math.abs(vx) < 60f) {
+                    // Vertical rising missile
+                    bmp = loader.getBitmap("misilV" + mFrame + ".png");
+                } else if (Math.abs(vy) > 20f && Math.abs(vx) > 25f) {
+                    // Diagonal trajectory
+                    bmp = loader.getBitmap("misilD" + mFrame + ".png");
+                    if (!facingRight && bmp != null) {
+                        bmp = loader.getFlippedBitmap(bmp, true, false);
+                    }
+                } else {
+                    // Horizontal cruise
+                    bmp = loader.getBitmap("misilH" + mFrame + ".png");
+                    if (!facingRight && bmp != null) {
+                        bmp = loader.getFlippedBitmap(bmp, true, false);
+                    }
+                }
                 break;
             case BOSS_LASER:
                 int blFrame = (animFrame % 3) + 1;
@@ -280,7 +362,7 @@ public class Bullet {
         if (bmp != null) {
             float drawX = x - bmp.getWidth() / 2f;
             float drawY = y - bmp.getHeight() / 2f;
-            if (type == Type.SATELLITE_WIDE || type == Type.SATELLITE_LASER) {
+            if (type == Type.SATELLITE_WIDE || type == Type.SATELLITE_LASER || type == Type.SATELLITE_BOMB) {
                 canvas.save();
                 canvas.rotate((float) Math.toDegrees(angle), x, y);
                 canvas.drawBitmap(bmp, drawX, drawY, paint);
@@ -296,10 +378,19 @@ public class Bullet {
         switch (type) {
             case PLAYER_NORMAL:
                 return new RectF(x - 3, y - 2, x + 3, y + 2);
-            case PLAYER_WIDE:
-                return new RectF(x - 4, y - 6, x + 4, y + 6);
-            case PLAYER_LASER:
-                return new RectF(x - 12, y - 3, x + 12, y + 3);
+            case PLAYER_WIDE: {
+                int wFrame = Math.min(3, (int) (lifetime * 16f) + 1);
+                float halfH = (wFrame == 1) ? 4f : ((wFrame == 2) ? 8f : 16f);
+                return new RectF(x - 4, y - halfH, x + 4, y + halfH);
+            }
+            case PLAYER_LASER: {
+                int lFrame = Math.min(3, (int) (lifetime * 20f) + 1);
+                float halfW = (lFrame == 1) ? 5f : ((lFrame == 2) ? 10f : 16f);
+                return new RectF(x - halfW, y - 3, x + halfW, y + 3);
+            }
+            case PLAYER_BOMB:
+            case SATELLITE_BOMB:
+                return new RectF(x - 8f, y - 6f, x + 8f, y + 6f);
             case SATELLITE:
                 return new RectF(x - 3, y - 3, x + 3, y + 3);
             case SATELLITE_WIDE:
@@ -323,8 +414,9 @@ public class Bullet {
 
     public boolean isPlayerBullet() {
         return type == Type.PLAYER_NORMAL || type == Type.PLAYER_WIDE ||
-                type == Type.PLAYER_LASER || type == Type.SATELLITE ||
-                type == Type.SATELLITE_WIDE || type == Type.SATELLITE_LASER;
+                type == Type.PLAYER_LASER || type == Type.PLAYER_BOMB ||
+                type == Type.SATELLITE || type == Type.SATELLITE_WIDE ||
+                type == Type.SATELLITE_LASER || type == Type.SATELLITE_BOMB;
     }
 
     public boolean isEnemyBullet() {

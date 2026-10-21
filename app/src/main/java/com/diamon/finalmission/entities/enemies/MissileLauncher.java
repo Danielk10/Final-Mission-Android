@@ -13,19 +13,23 @@ import java.util.List;
 
 /**
  * Missile Launcher enemy from Final Mission NES:
- * Armored mobile ground launcher that opens its hatch and fires high-threat guided missiles.
+ * Armored mobile ground launcher that opens its mechanical hatch
+ * (lanzaMisil 1 -> 2 -> 3) and launches vertical rising or directional
+ * high-threat missiles (misilV / misilH / misilD) accompanied by trailing smoke
+ * and secondary explosive impact.
  */
 public class MissileLauncher extends Enemy {
 
-    private final boolean facingRight;
+    public final boolean facingRight;
     private float fireTimer = 1.8f;
     private int hatchFrame = 1;
-    private float hatchTimer = 0f;
     private boolean isLaunching = false;
+    private int launchCount = 0;
 
     public MissileLauncher(float x, float y, boolean facingRight) {
         super(x, y, 24f, 16f, 5f, 600);
         this.facingRight = facingRight;
+        this.fireTimer = 1.2f + (float) (Math.random() * 1.0f);
     }
 
     @Override
@@ -36,31 +40,41 @@ public class MissileLauncher extends Enemy {
             hitFlashTimer -= dt;
         }
 
+        // Horizontal scroll with level progression
         x -= scrollSpeed * dt;
 
         fireTimer -= dt;
-        if (fireTimer <= 0.6f && !isLaunching) {
+
+        // Progressive hatch opening animation: Frame 1 (closed) -> 2 (opening) -> 3 (open)
+        if (fireTimer <= 0.65f && fireTimer > 0.35f) {
             isLaunching = true;
-            hatchFrame = 2; // Hatch opening
+            hatchFrame = 2;
+        } else if (fireTimer <= 0.35f && fireTimer > 0f) {
+            hatchFrame = 3;
         }
 
-        if (fireTimer <= 0.3f && hatchFrame == 2) {
-            hatchFrame = 3; // Fully open
-        }
-
+        // Launch missile
         if (fireTimer <= 0f) {
-            fireTimer = 2.4f + (float) (Math.random() * 0.8f);
+            fireTimer = 2.5f + (float) (Math.random() * 0.8f);
             isLaunching = false;
             hatchFrame = 1;
+            launchCount++;
 
-            if (x > -10 && x < 450 && player.alive) {
-                float launchX = facingRight ? (x + width - 4) : (x + 4);
+            if (x > -20f && x < 550f && player.alive) {
+                float launchX = facingRight ? (x + width - 6f) : (x + 6f);
                 float launchY = y - 4f;
-                enemyBullets.add(Bullet.createEnemyMissile(launchX, launchY, facingRight));
+
+                // Alternate between vertical rising arc missile and forward directional missile
+                boolean useVertical = (launchCount % 2 == 1) || (player.y < y - 40f);
+                if (useVertical) {
+                    enemyBullets.add(Bullet.createEnemyMissileVertical(launchX, launchY, facingRight));
+                } else {
+                    enemyBullets.add(Bullet.createEnemyMissileDirectional(launchX, launchY, facingRight));
+                }
             }
         }
 
-        if (x < -40) {
+        if (x < -60f) {
             alive = false;
         }
     }

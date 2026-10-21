@@ -89,8 +89,9 @@ public class HUD {
         String charName = player.getShortCharacterName();
         drawShadowText(canvas, charName, pipStartX + (Player.MAX_HEALTH * (pipW + 3f)) + 4f, 10f);
 
-        // 3. Lives Stock Indicator: P=02
-        String livesStr = "P=" + String.format("%02d", Math.max(0, player.lives));
+        // 3. Lives Stock Indicator: P=02 (reserve lives stock in authentic NES)
+        int stock = Math.max(0, player.lives - 1);
+        String livesStr = "P=" + String.format("%02d", stock);
         drawShadowText(canvas, livesStr, pipStartX + (Player.MAX_HEALTH * (pipW + 3f)) + 4f, 19f);
 
         // 4. Power-Up Status Indicators: 'W', 'L', 'S', 'B'
@@ -117,11 +118,11 @@ public class HUD {
                 speedActive ? 0xFF00F800 : 0x66333333,
                 speedActive ? Color.WHITE : 0xFF777777);
 
-        // Life recovery badge 'B'
-        boolean lifeMaxed = (player.health == Player.MAX_HEALTH);
+        // Bomb weapon badge 'B'
+        boolean bombActive = (player.weaponType == WeaponType.BOMB);
         drawPowerUpBadge(canvas, "B", badgeStartX + (badgeSize + badgeGap) * 3f, badgeY, badgeSize,
-                lifeMaxed ? 0xFFE04040 : 0x66333333,
-                lifeMaxed ? Color.WHITE : 0xFF777777);
+                bombActive ? 0xFFE04040 : 0x66333333,
+                bombActive ? Color.WHITE : 0xFF777777);
 
         // 5. STAGE indicator at top center
         String stageStr = "STAGE " + stageNumber;
